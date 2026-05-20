@@ -1,0 +1,108 @@
+import axios from "axios";
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+export const API = `${BACKEND_URL}/api`;
+
+export async function fetchMatches() {
+  const res = await axios.get(`${API}/matches`);
+  return res.data;
+}
+
+export const FALLBACK_MATCHES = [
+  {
+    id: "fb1",
+    stage: "Gruppe A",
+    venue: "Lusail Stadium",
+    kickoff: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+    status: "finished",
+    minute: null,
+    home: { code: "DE", name: "Deutschland", short: "GER" },
+    away: { code: "JP", name: "Japan", short: "JPN" },
+    home_score: 3,
+    away_score: 1,
+  },
+  {
+    id: "fb2",
+    stage: "Gruppe B",
+    venue: "Al Bayt Stadium",
+    kickoff: new Date(Date.now() - 90 * 60 * 1000).toISOString(),
+    status: "finished",
+    minute: null,
+    home: { code: "BR", name: "Brasilien", short: "BRA" },
+    away: { code: "MX", name: "Mexiko", short: "MEX" },
+    home_score: 2,
+    away_score: 0,
+  },
+  {
+    id: "fb3",
+    stage: "Gruppe C",
+    venue: "Education City",
+    kickoff: new Date(Date.now() - 37 * 60 * 1000).toISOString(),
+    status: "live",
+    minute: 37,
+    home: { code: "ES", name: "Spanien", short: "ESP" },
+    away: { code: "PT", name: "Portugal", short: "POR" },
+    home_score: 1,
+    away_score: 1,
+  },
+  {
+    id: "fb4",
+    stage: "Gruppe D",
+    venue: "Stadium 974",
+    kickoff: new Date(Date.now() - 62 * 60 * 1000).toISOString(),
+    status: "live",
+    minute: 62,
+    home: { code: "FR", name: "Frankreich", short: "FRA" },
+    away: { code: "IT", name: "Italien", short: "ITA" },
+    home_score: 2,
+    away_score: 1,
+  },
+  {
+    id: "fb5",
+    stage: "Achtelfinale",
+    venue: "Khalifa International",
+    kickoff: new Date(Date.now() + 18 * 60 * 1000).toISOString(),
+    status: "scheduled",
+    minute: null,
+    home: { code: "AR", name: "Argentinien", short: "ARG" },
+    away: { code: "NL", name: "Niederlande", short: "NED" },
+    home_score: null,
+    away_score: null,
+  },
+  {
+    id: "fb6",
+    stage: "Achtelfinale",
+    venue: "Al Janoub Stadium",
+    kickoff: new Date(Date.now() + 2.5 * 60 * 60 * 1000).toISOString(),
+    status: "scheduled",
+    minute: null,
+    home: { code: "GB-ENG", name: "England", short: "ENG" },
+    away: { code: "BE", name: "Belgien", short: "BEL" },
+    home_score: null,
+    away_score: null,
+  },
+  {
+    id: "fb7",
+    stage: "Achtelfinale",
+    venue: "Ahmad bin Ali",
+    kickoff: new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString(),
+    status: "scheduled",
+    minute: null,
+    home: { code: "HR", name: "Kroatien", short: "CRO" },
+    away: { code: "MA", name: "Marokko", short: "MAR" },
+    home_score: null,
+    away_score: null,
+  },
+  {
+    id: "fb8",
+    stage: "Achtelfinale",
+    venue: "Al Thumama",
+    kickoff: new Date(Date.now() + 7.5 * 60 * 60 * 1000).toISOString(),
+    status: "scheduled",
+    minute: null,
+    home: { code: "UY", name: "Uruguay", short: "URU" },
+    away: { code: "US", name: "USA", short: "USA" },
+    home_score: null,
+    away_score: null,
+  },
+];
