@@ -1,0 +1,89 @@
+{
+  "project_name": "Jandia Arena TV Dashboard",
+  "theme": "dark",
+  "archetype": "Archetype 2 (Performance Pro) / Broadcast Hybrid",
+  "global_rules": [
+    "No small buttons or interactive elements; this is a passive 16:9 TV display",
+    "Data must be completely mocked (demo/fallback data) as requested by user",
+    "Auto-rotate between 4 distinct screens every 15 seconds",
+    "Auto-refresh data (if it were real) every 60 seconds",
+    "German language (Deutsch) for all static text"
+  ],
+  "colors": {
+    "background": "#0A1128",
+    "surface": "#111A3A",
+    "surface_glass": "rgba(17, 26, 58, 0.8)",
+    "primary": "#007AFF",
+    "accent": "#2563EB",
+    "text_primary": "#FFFFFF",
+    "text_secondary": "#93C5FD",
+    "live_indicator": "#EF4444",
+    "border": "rgba(96, 165, 250, 0.2)"
+  },
+  "typography": {
+    "font_primary": "Outfit, sans-serif",
+    "font_display": "Anton, sans-serif",
+    "scales": {
+      "h1_screen_title": "text-5xl lg:text-6xl font-display tracking-wider uppercase",
+      "h2_team_name": "text-4xl lg:text-5xl font-primary font-bold tracking-tight",
+      "score_massive": "text-8xl font-display tracking-tight",
+      "body_large": "text-2xl font-primary text-blue-200",
+      "badge": "text-xl font-primary uppercase tracking-[0.2em]"
+    }
+  },
+  "layout": {
+    "structure": "16:9 fixed fullscreen (h-screen w-screen overflow-hidden). Do not allow scrolling.",
+    "spacing": "Generous overscan margins: p-12 or p-16 for the main container.",
+    "cards": "Use 'Grid Borders / Technical Look'. 1px borders (border-blue-400/20), flat background (bg-[#111A3A]/80), sharp corners (rounded-none or max rounded-md)."
+  },
+  "screens": [
+    {
+      "id": "todays_matches",
+      "name_de": "HEUTE IM STADION",
+      "layout": "Grid list of 4-6 matches. Each row showing Time, Team A Flag/Name, 'vs', Team B Flag/Name."
+    },
+    {
+      "id": "next_match",
+      "name_de": "NÄCHSTES SPIEL",
+      "layout": "Hero layout. Centered massive vs matchup. 'ANPFIFF IN XX MINUTEN' (Kickoff in XX mins)."
+    },
+    {
+      "id": "live_scores",
+      "name_de": "LIVE ERGEBNISSE",
+      "layout": "Bento grid of currently active matches. Massive score typography. Pulsing red dot with 'LIVE' text and current minute (e.g., '67. Min')."
+    },
+    {
+      "id": "final_results",
+      "name_de": "ENDERGEBNISSE",
+      "layout": "Grid list of completed matches. Text slightly dimmed (opacity-70) except for the winner which is highlighted."
+    }
+  ],
+  "motion": {
+    "screen_transition": "Framer Motion AnimatePresence. Slide in from right, exit left. Duration 0.8s, ease: 'anticipate'.",
+    "micro_interactions": "None. This is a non-interactive display."
+  },
+  "media": {
+    "background_image": {
+      "url": "https://static.prod-images.emergentagent.com/jobs/350ac180-61fb-48e9-b8d9-50ec9465a89d/images/23f3eed9fb2fcfd8ab6a748b97925a709811830e9d7b64a20dc3c2c64c5edec7.png",
+      "usage": "Global fixed background with bg-black/40 overlay to ensure text contrast."
+    },
+    "jandia_logo": {
+      "url": "https://static.prod-images.emergentagent.com/jobs/350ac180-61fb-48e9-b8d9-50ec9465a89d/images/c7a3f778ac2b681eecd128e16c43e7a5c247bd23d9b82da148c421adaef3c543.png",
+      "usage": "Header top left. Displayed prominently on all screens."
+    }
+  },
+  "instructions_to_main_agent": [
+    "Use react-country-flag for team flags if possible, or use emoji fallbacks for countries.",
+    "Mock all data in a dedicated service file. Ensure data structure supports live minute updating and score changes for realism.",
+    "Implement a rotating carousel wrapper using Framer Motion that cycles the 4 screens every 15 seconds.",
+    "Header must include a clock (current time) and a subtle 60s progress bar or indicator showing when the 'data' refreshes.",
+    "Ensure the UI uses the 16:9 ratio appropriately, stretching content to fit the screen size nicely using flex/grid.",
+    "Use standard HTML/Tailwind for layouts, bypassing Shadcn components like Cards since they are too rigid for large TV displays.",
+    "Add 'data-testid' to all key text elements (e.g., 'data-testid=\"live-score-team1\"')."
+  ],
+  "dependencies_to_add": [
+    "framer-motion",
+    "@phosphor-icons/react",
+    "react-country-flag"
+  ]
+}
