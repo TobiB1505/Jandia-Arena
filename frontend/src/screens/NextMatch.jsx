@@ -37,9 +37,9 @@ export const NextMatch = ({ match }) => {
 
   if (!match) {
     return (
-      <ScreenFrame title="Nächstes Spiel" testId="screen-next">
+      <ScreenFrame title="Next Match" testId="screen-next">
         <div className="flex h-full items-center justify-center text-3xl text-blue-200">
-          Kein weiteres Spiel heute geplant.
+          Kein weiteres Spiel geplant.
         </div>
       </ScreenFrame>
     );
@@ -52,7 +52,7 @@ export const NextMatch = ({ match }) => {
 
   return (
     <ScreenFrame
-      title="Nächstes Spiel"
+      title="Next Match"
       subtitle={`${match.stage} · ${match.venue}`}
       testId="screen-next"
     >
@@ -75,17 +75,17 @@ export const NextMatch = ({ match }) => {
           <div className="font-display text-9xl text-blue-400/80">VS</div>
           <div className="flex flex-col items-center gap-2">
             <div className="text-xl font-bold uppercase tracking-[0.4em] text-blue-200">
-              Anpfiff um {kickoffStr}
+              Kick-off at {kickoffStr}
             </div>
             <div
               data-testid="next-countdown"
               className="flex items-end gap-6 rounded-sm border border-blue-400/30 bg-[#111A3A]/80 px-10 py-6"
             >
-              <Block value={parts.hours} label="Std" />
+              <Block value={parts.hours} label="Hrs" />
               <span className="font-display text-7xl text-blue-400/60">:</span>
               <Block value={parts.minutes} label="Min" />
               <span className="font-display text-7xl text-blue-400/60">:</span>
-              <Block value={parts.seconds} label="Sek" />
+              <Block value={parts.seconds} label="Sec" />
             </div>
           </div>
         </div>

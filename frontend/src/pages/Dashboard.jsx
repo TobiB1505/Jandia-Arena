@@ -4,8 +4,14 @@ import Header from "../components/Header";
 import TodaysMatches from "../screens/TodaysMatches";
 import NextMatch from "../screens/NextMatch";
 import LiveScores from "../screens/LiveScores";
-import FinalResults from "../screens/FinalResults";
-import { fetchMatches, FALLBACK_MATCHES } from "../lib/api";
+import TomorrowsMatches from "../screens/TomorrowsMatches";
+import GroupTables from "../screens/GroupTables";
+import {
+  fetchAllMatches,
+  fetchGroups,
+  FALLBACK_MATCHES,
+  FALLBACK_GROUPS,
+} from "../lib/api";
 
 const ROTATE_MS = 15000;
 const REFRESH_MS = 60000;
@@ -13,16 +19,26 @@ const REFRESH_MS = 60000;
 const BG_URL =
   "https://static.prod-images.emergentagent.com/jobs/350ac180-61fb-48e9-b8d9-50ec9465a89d/images/23f3eed9fb2fcfd8ab6a748b97925a709811830e9d7b64a20dc3c2c64c5edec7.png";
 
-const SCREENS = ["today", "next", "live", "final"];
+const SCREENS = ["today", "next", "live", "tomorrow", "groups"];
 const SCREEN_LABELS = {
-  today: "Heute",
-  next: "Nächstes",
+  today: "Today",
+  next: "Next",
   live: "Live",
-  final: "Ergebnisse",
+  tomorrow: "Tomorrow",
+  groups: "Tables",
 };
 
+function isSameDay(a, b) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
 export default function Dashboard() {
-  const [matches, setMatches] = useState(FALLBACK_MATCHES);
+  const [allMatches, setAllMatches] = useState(FALLBACK_MATCHES);
+  const [groups, setGroups] = useState(FALLBACK_GROUPS);
   const [usingFallback, setUsingFallback] = useState(false);
   const [screenIdx, setScreenIdx] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -30,17 +46,26 @@ export default function Dashboard() {
 
   const load = useCallback(async () => {
     try {
-      const data = await fetchMatches();
-      if (Array.isArray(data) && data.length > 0) {
-        setMatches(data);
+      const [matches, grps] = await Promise.all([
+        fetchAllMatches(),
+        fetchGroups(),
+      ]);
+      if (Array.isArray(matches) && matches.length > 0) {
+        setAllMatches(matches);
         setUsingFallback(false);
       } else {
-        setMatches(FALLBACK_MATCHES);
+        setAllMatches(FALLBACK_MATCHES);
         setUsingFallback(true);
       }
+      if (Array.isArray(grps) && grps.length > 0) {
+        setGroups(grps);
+      } else {
+        setGroups(FALLBACK_GROUPS);
+      }
     } catch (e) {
-      console.warn("Falling back to demo matches:", e?.message);
-      setMatches(FALLBACK_MATCHES);
+      console.warn("Falling back to demo data:", e?.message);
+      setAllMatches(FALLBACK_MATCHES);
+      setGroups(FALLBACK_GROUPS);
       setUsingFallback(true);
     } finally {
       setRefreshKey((k) => k + 1);
@@ -67,19 +92,32 @@ export default function Dashboard() {
     return () => document.removeEventListener("fullscreenchange", onChange);
   }, []);
 
-  const liveMatches = useMemo(
-    () => matches.filter((m) => m.status === "live"),
-    [matches]
+  const today = new Date();
+  const tomorrow = new Date();
+  tomorrow.setDate(today.getDate() + 1);
+
+  const todayMatches = useMemo(
+    () => allMatches.filter((m) => isSameDay(new Date(m.kickoff), today)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allMatches]
   );
-  const finishedMatches = useMemo(
-    () => matches.filter((m) => m.status === "finished"),
-    [matches]
+  const tomorrowMatches = useMemo(
+    () => allMatches.filter((m) => isSameDay(new Date(m.kickoff), tomorrow)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allMatches]
+  );
+  const liveMatches = useMemo(
+    () =>
+      allMatches.filter(
+        (m) => m.status === "live" || m.status === "halftime"
+      ),
+    [allMatches]
   );
   const nextMatch = useMemo(() => {
-    const upcoming = matches.filter((m) => m.status === "scheduled");
+    const upcoming = allMatches.filter((m) => m.status === "scheduled");
     upcoming.sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
     return upcoming[0] || null;
-  }, [matches]);
+  }, [allMatches]);
 
   const enterFullscreen = useCallback(() => {
     const el = document.documentElement;
@@ -108,14 +146,17 @@ export default function Dashboard() {
         <main className="relative flex-1 min-h-0">
           <AnimatePresence mode="wait">
             {current === "today" && (
-              <TodaysMatches key="today" matches={matches} />
+              <TodaysMatches key="today" matches={todayMatches} />
             )}
             {current === "next" && <NextMatch key="next" match={nextMatch} />}
             {current === "live" && (
               <LiveScores key="live" matches={liveMatches} />
             )}
-            {current === "final" && (
-              <FinalResults key="final" matches={finishedMatches} />
+            {current === "tomorrow" && (
+              <TomorrowsMatches key="tomorrow" matches={tomorrowMatches} />
+            )}
+            {current === "groups" && (
+              <GroupTables key="groups" groups={groups} />
             )}
           </AnimatePresence>
         </main>
@@ -159,7 +200,7 @@ export default function Dashboard() {
                 data-testid="live-badge"
                 className="rounded-sm bg-emerald-500/10 px-3 py-1.5 font-bold text-emerald-300 ring-1 ring-emerald-400/30"
               >
-                Daten · Live
+                Data · Live
               </span>
             )}
             <button
@@ -167,7 +208,7 @@ export default function Dashboard() {
               onClick={enterFullscreen}
               className="rounded-sm border border-blue-400/30 bg-blue-500/10 px-5 py-3 text-base font-bold text-blue-100 transition hover:bg-blue-500/20"
             >
-              {isFullscreen ? "Vollbild beenden" : "Vollbild · TV-Modus"}
+              {isFullscreen ? "Exit Fullscreen" : "Fullscreen · TV Mode"}
             </button>
           </div>
         </footer>

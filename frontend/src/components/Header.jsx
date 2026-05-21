@@ -42,8 +42,11 @@ export const Header = ({ refreshKey }) => {
           >
             JANDIA ARENA
           </span>
-          <span className="mt-1 text-sm font-medium uppercase tracking-[0.4em] text-blue-300">
-            World Cup · Live TV
+          <span
+            className="mt-1 text-sm font-medium uppercase tracking-[0.4em] text-blue-300"
+            data-testid="ja-subtitle"
+          >
+            Public Viewing Schedule
           </span>
         </div>
       </div>
@@ -56,7 +59,10 @@ export const Header = ({ refreshKey }) => {
           >
             {time}
           </div>
-          <div className="text-xs uppercase tracking-[0.3em] text-blue-300">
+          <div
+            className="text-xs uppercase tracking-[0.3em] text-blue-300"
+            data-testid="ja-date"
+          >
             {dateStr}
           </div>
         </div>

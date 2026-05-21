@@ -1,5 +1,6 @@
 import ScreenFrame from "../components/ScreenFrame";
 import Flag from "../components/Flag";
+import StatusBadge from "../components/StatusBadge";
 
 const LiveCard = ({ match }) => (
   <div
@@ -7,15 +8,11 @@ const LiveCard = ({ match }) => (
     className="relative flex flex-col justify-between rounded-sm border border-blue-400/25 bg-[#111A3A]/80 p-8"
   >
     <div className="flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <span className="live-dot h-3.5 w-3.5 rounded-full bg-red-500 shadow-[0_0_18px_rgba(239,68,68,0.9)]" />
-        <span
-          data-testid={`live-minute-${match.id}`}
-          className="font-display text-2xl uppercase tracking-[0.3em] text-red-300"
-        >
-          Live · {match.minute}. Min
-        </span>
-      </div>
+      <StatusBadge
+        status={match.status}
+        minute={match.minute}
+        testId={`live-status-${match.id}`}
+      />
       <span className="text-base uppercase tracking-[0.3em] text-blue-300">
         {match.stage}
       </span>
@@ -64,7 +61,11 @@ const LiveCard = ({ match }) => (
 export const LiveScores = ({ matches }) => {
   if (!matches || matches.length === 0) {
     return (
-      <ScreenFrame title="Live Ergebnisse" testId="screen-live">
+      <ScreenFrame
+        title="Live Scores"
+        subtitle="Currently no live matches"
+        testId="screen-live"
+      >
         <div className="flex h-full items-center justify-center text-3xl text-blue-200">
           Aktuell keine laufenden Spiele.
         </div>
@@ -81,8 +82,8 @@ export const LiveScores = ({ matches }) => {
 
   return (
     <ScreenFrame
-      title="Live Ergebnisse"
-      subtitle={`${matches.length} laufende Begegnungen`}
+      title="Live Scores"
+      subtitle={`${matches.length} matches in progress`}
       testId="screen-live"
     >
       <div className={`grid h-full gap-6 ${gridCols}`}>
