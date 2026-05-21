@@ -58,7 +58,7 @@ export const TomorrowsMatches = ({ matches }) => {
         testId="screen-tomorrow"
       >
         <div className="flex h-full items-center justify-center text-3xl text-blue-200">
-          Noch keine Spiele für morgen geplant.
+          No fixtures scheduled for tomorrow.
         </div>
       </ScreenFrame>
     );

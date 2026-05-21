@@ -50,7 +50,7 @@ export const FALLBACK_GROUPS = [
     { team: { code: "ES", name: "Spanien", short: "ESP" }, played: 3, wins: 2, draws: 1, losses: 0, goals_for: 5, goals_against: 2, goal_diff: 3, points: 7 },
     { team: { code: "PT", name: "Portugal", short: "POR" }, played: 3, wins: 2, draws: 1, losses: 0, goals_for: 4, goals_against: 1, goal_diff: 3, points: 7 },
     { team: { code: "HR", name: "Kroatien", short: "CRO" }, played: 3, wins: 1, draws: 0, losses: 2, goals_for: 3, goals_against: 5, goal_diff: -2, points: 3 },
-    { team: { code: "JP", name: "Japan", short: "JPN" }, played: 3, wins: 0, draws: 0, losses: 3, goals_for: 1, goals_against: 5, goal_diff: -4, points: 0 },
+    { team: { code: "NL", name: "Niederlande", short: "NED" }, played: 3, wins: 0, draws: 0, losses: 3, goals_for: 1, goals_against: 5, goal_diff: -4, points: 0 },
   ]},
   { name: "Group D", standings: [
     { team: { code: "FR", name: "Frankreich", short: "FRA" }, played: 3, wins: 3, draws: 0, losses: 0, goals_for: 8, goals_against: 2, goal_diff: 6, points: 9 },

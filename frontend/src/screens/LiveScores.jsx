@@ -67,7 +67,7 @@ export const LiveScores = ({ matches }) => {
         testId="screen-live"
       >
         <div className="flex h-full items-center justify-center text-3xl text-blue-200">
-          Aktuell keine laufenden Spiele.
+          Currently no live matches.
         </div>
       </ScreenFrame>
     );

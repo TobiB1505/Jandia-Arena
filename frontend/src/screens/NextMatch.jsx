@@ -39,7 +39,7 @@ export const NextMatch = ({ match }) => {
     return (
       <ScreenFrame title="Next Match" testId="screen-next">
         <div className="flex h-full items-center justify-center text-3xl text-blue-200">
-          Kein weiteres Spiel geplant.
+          No further matches scheduled.
         </div>
       </ScreenFrame>
     );

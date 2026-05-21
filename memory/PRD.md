@@ -36,6 +36,16 @@ Create a 16:9 TV dashboard web app for "JANDIA ARENA". The app will be displayed
 - [x] 16:9 fixed layout, no scrolling
 - [x] Fallback demo data if API unavailable
 
+## Iteration 2 (2026-02-21) – TV-optimisation
+- [x] **5 rotating screens**: Today's Matches → Next Match → Live Scores → Tomorrow's Matches → Group Tables
+- [x] Replaced Final Results screen with Tomorrow's Matches
+- [x] Added Group Tables screen (4 groups, P/W/D/L/GD/PTS, top-2 highlighted)
+- [x] Backend `/api/matches/all`, `/api/matches/tomorrow`, `/api/groups`
+- [x] Status detection extended: scheduled → UPCOMING, live → LIVE · 37', halftime → HALFTIME, finished → FULL TIME
+- [x] Header subtitle changed to "Public Viewing Schedule"
+- [x] All status badges in English (per spec)
+- [x] 16 unique national teams across 4 groups, no duplicates
+
 ## Backlog (P1)
 - Real football API integration toggle (env-driven), e.g. API-Football
 - Group standings screen

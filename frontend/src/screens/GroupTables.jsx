@@ -71,7 +71,7 @@ export const GroupTables = ({ groups }) => {
     return (
       <ScreenFrame title="Group Tables" testId="screen-groups">
         <div className="flex h-full items-center justify-center text-3xl text-blue-200">
-          Keine Tabellen verfügbar.
+          No standings available.
         </div>
       </ScreenFrame>
     );
