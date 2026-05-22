@@ -11,7 +11,7 @@ const GroupCard = ({ group }) => (
         {group.name}
       </h3>
       <span className="text-xs uppercase tracking-[0.3em] text-blue-300">
-        Standings
+        Tabelle
       </span>
     </div>
 
@@ -19,12 +19,12 @@ const GroupCard = ({ group }) => (
     <div className="grid grid-cols-[36px_minmax(0,1fr)_repeat(5,40px)_56px] items-center gap-2 pb-2 text-xs font-bold uppercase tracking-[0.2em] text-blue-300/80">
       <span>#</span>
       <span>Team</span>
-      <span className="text-center">P</span>
-      <span className="text-center">W</span>
-      <span className="text-center">D</span>
-      <span className="text-center">L</span>
-      <span className="text-center">GD</span>
-      <span className="text-right">PTS</span>
+      <span className="text-center">SP</span>
+      <span className="text-center">S</span>
+      <span className="text-center">U</span>
+      <span className="text-center">N</span>
+      <span className="text-center">TD</span>
+      <span className="text-right">PKT</span>
     </div>
 
     {group.standings.map((s, i) => {
@@ -69,9 +69,9 @@ const GroupCard = ({ group }) => (
 export const GroupTables = ({ groups }) => {
   if (!groups || groups.length === 0) {
     return (
-      <ScreenFrame title="Group Tables" testId="screen-groups">
+      <ScreenFrame title="Gruppentabellen" testId="screen-groups">
         <div className="flex h-full items-center justify-center text-3xl text-blue-200">
-          No standings available.
+          Keine Tabellen verfügbar.
         </div>
       </ScreenFrame>
     );
@@ -79,8 +79,8 @@ export const GroupTables = ({ groups }) => {
 
   return (
     <ScreenFrame
-      title="Group Tables"
-      subtitle="Top 2 advance to knockout stage"
+      title="Gruppentabellen"
+      subtitle="Top 2 ziehen ins Achtelfinale ein"
       testId="screen-groups"
     >
       <div className="grid h-full grid-cols-2 grid-rows-2 gap-6">

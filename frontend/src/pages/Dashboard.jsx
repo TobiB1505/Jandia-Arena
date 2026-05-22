@@ -21,11 +21,11 @@ const BG_URL =
 
 const SCREENS = ["today", "next", "live", "tomorrow", "groups"];
 const SCREEN_LABELS = {
-  today: "Today",
-  next: "Next",
+  today: "Heute",
+  next: "Nächstes",
   live: "Live",
-  tomorrow: "Tomorrow",
-  groups: "Tables",
+  tomorrow: "Morgen",
+  groups: "Tabellen",
 };
 
 function isSameDay(a, b) {
@@ -193,14 +193,14 @@ export default function Dashboard() {
                 data-testid="demo-badge"
                 className="rounded-sm bg-amber-500/10 px-3 py-1.5 font-bold text-amber-300 ring-1 ring-amber-400/30"
               >
-                Demo · Fallback
+                Demo · Ersatzdaten
               </span>
             ) : (
               <span
                 data-testid="live-badge"
                 className="rounded-sm bg-emerald-500/10 px-3 py-1.5 font-bold text-emerald-300 ring-1 ring-emerald-400/30"
               >
-                Data · Live
+                Daten · Live
               </span>
             )}
             <button
@@ -208,7 +208,7 @@ export default function Dashboard() {
               onClick={enterFullscreen}
               className="rounded-sm border border-blue-400/30 bg-blue-500/10 px-5 py-3 text-base font-bold text-blue-100 transition hover:bg-blue-500/20"
             >
-              {isFullscreen ? "Exit Fullscreen" : "Fullscreen · TV Mode"}
+              {isFullscreen ? "Vollbild beenden" : "Vollbild · TV-Modus"}
             </button>
           </div>
         </footer>

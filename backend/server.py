@@ -80,58 +80,58 @@ def _build_matches() -> List[Match]:
     schedule = [
         # FINISHED earlier today (relative offsets so always show as finished)
         {
-            "id": "m1", "stage": "Group A", "venue": "Lusail Stadium",
+            "id": "m1", "stage": "Gruppe A", "venue": "Lusail Stadium",
             "kickoff": now - timedelta(hours=4, minutes=30), "home": "GER", "away": "JPN",
             "home_score": 3, "away_score": 1,
         },
         {
-            "id": "m2", "stage": "Group B", "venue": "Al Bayt Stadium",
+            "id": "m2", "stage": "Gruppe B", "venue": "Al Bayt Stadium",
             "kickoff": now - timedelta(hours=2, minutes=45), "home": "BRA", "away": "MEX",
             "home_score": 2, "away_score": 0,
         },
         # LIVE now (offsets relative to now). m3 is in first half, m4 is in halftime window.
         {
-            "id": "m3", "stage": "Group C", "venue": "Education City",
+            "id": "m3", "stage": "Gruppe C", "venue": "Education City",
             "kickoff": now - timedelta(minutes=37), "home": "ESP", "away": "POR",
             "home_score": 1, "away_score": 1,
         },
         {
-            "id": "m4", "stage": "Group D", "venue": "Stadium 974",
+            "id": "m4", "stage": "Gruppe D", "venue": "Stadium 974",
             "kickoff": now - timedelta(minutes=50), "home": "FRA", "away": "ITA",
             "home_score": 2, "away_score": 1,
         },
         # NEXT / Upcoming today
         {
-            "id": "m5", "stage": "Round of 16", "venue": "Khalifa International",
+            "id": "m5", "stage": "Achtelfinale", "venue": "Khalifa International",
             "kickoff": now + timedelta(minutes=18), "home": "ARG", "away": "NED",
         },
         {
-            "id": "m6", "stage": "Round of 16", "venue": "Al Janoub Stadium",
+            "id": "m6", "stage": "Achtelfinale", "venue": "Al Janoub Stadium",
             "kickoff": now + timedelta(hours=2, minutes=30), "home": "ENG", "away": "BEL",
         },
         {
-            "id": "m7", "stage": "Round of 16", "venue": "Ahmad bin Ali",
+            "id": "m7", "stage": "Achtelfinale", "venue": "Ahmad bin Ali",
             "kickoff": now + timedelta(hours=5, minutes=0), "home": "CRO", "away": "MAR",
         },
         {
-            "id": "m8", "stage": "Round of 16", "venue": "Al Thumama",
+            "id": "m8", "stage": "Achtelfinale", "venue": "Al Thumama",
             "kickoff": now + timedelta(hours=7, minutes=30), "home": "URU", "away": "USA",
         },
         # TOMORROW
         {
-            "id": "t1", "stage": "Quarter-final", "venue": "Lusail Stadium",
+            "id": "t1", "stage": "Viertelfinale", "venue": "Lusail Stadium",
             "kickoff": now + timedelta(days=1, hours=-2), "home": "GER", "away": "ESP",
         },
         {
-            "id": "t2", "stage": "Quarter-final", "venue": "Al Bayt Stadium",
+            "id": "t2", "stage": "Viertelfinale", "venue": "Al Bayt Stadium",
             "kickoff": now + timedelta(days=1, hours=1), "home": "FRA", "away": "POR",
         },
         {
-            "id": "t3", "stage": "Quarter-final", "venue": "Education City",
+            "id": "t3", "stage": "Viertelfinale", "venue": "Education City",
             "kickoff": now + timedelta(days=1, hours=4), "home": "BRA", "away": "ARG",
         },
         {
-            "id": "t4", "stage": "Quarter-final", "venue": "Stadium 974",
+            "id": "t4", "stage": "Viertelfinale", "venue": "Stadium 974",
             "kickoff": now + timedelta(days=1, hours=6, minutes=30), "home": "ENG", "away": "NED",
         },
     ]
@@ -240,7 +240,7 @@ def _build_groups() -> List[Group]:
                 points=w * 3 + d,
             ))
         standings.sort(key=lambda s: (s.points, s.goal_diff, s.goals_for), reverse=True)
-        groups.append(Group(name=f"Group {name}", standings=standings))
+        groups.append(Group(name=f"Gruppe {name}", standings=standings))
     return groups
 
 

@@ -1,11 +1,27 @@
 import { useEffect, useState } from "react";
 
-const LOGO_URL =
-  "https://static.prod-images.emergentagent.com/jobs/350ac180-61fb-48e9-b8d9-50ec9465a89d/images/c7a3f778ac2b681eecd128e16c43e7a5c247bd23d9b82da148c421adaef3c543.png";
-
 function pad(n) {
   return n.toString().padStart(2, "0");
 }
+
+// Custom CSS monogram logo – solid dark-blue rounded square, no transparency artifacts.
+const LogoMark = () => (
+  <div
+    data-testid="ja-logo"
+    aria-label="Jandia Arena"
+    className="relative flex h-16 w-16 items-center justify-center rounded-md bg-gradient-to-br from-[#1E3A8A] to-[#0A1128] shadow-[0_4px_24px_rgba(37,99,235,0.45)] ring-1 ring-blue-300/40"
+  >
+    {/* inner ring */}
+    <span className="absolute inset-1 rounded-sm ring-1 ring-blue-300/25" />
+    {/* monogram */}
+    <span className="font-display text-3xl leading-none tracking-tight text-white">
+      JA
+    </span>
+    {/* corner accents */}
+    <span className="absolute left-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-blue-400" />
+    <span className="absolute right-1.5 bottom-1.5 h-1.5 w-1.5 rounded-full bg-cyan-300/80" />
+  </div>
+);
 
 export const Header = ({ refreshKey }) => {
   const [now, setNow] = useState(new Date());
@@ -29,12 +45,7 @@ export const Header = ({ refreshKey }) => {
       className="relative z-20 flex items-center justify-between px-12 pt-8 pb-4"
     >
       <div className="flex items-center gap-5">
-        <img
-          src={LOGO_URL}
-          alt="Jandia Arena"
-          className="h-16 w-16 object-contain drop-shadow-[0_0_20px_rgba(37,99,235,0.6)]"
-          data-testid="ja-logo"
-        />
+        <LogoMark />
         <div className="flex flex-col leading-none">
           <span
             className="font-display text-4xl tracking-[0.18em] text-white"
@@ -46,7 +57,7 @@ export const Header = ({ refreshKey }) => {
             className="mt-1 text-sm font-medium uppercase tracking-[0.4em] text-blue-300"
             data-testid="ja-subtitle"
           >
-            Public Viewing Schedule
+            Public-Viewing-Programm
           </span>
         </div>
       </div>

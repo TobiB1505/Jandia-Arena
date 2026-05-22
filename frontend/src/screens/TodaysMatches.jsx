@@ -74,8 +74,8 @@ export const TodaysMatches = ({ matches }) => {
 
   return (
     <ScreenFrame
-      title="Today's Matches"
-      subtitle={`${matches.length} fixtures · ${todayStr}`}
+      title="Heutige Spiele"
+      subtitle={`${matches.length} Begegnungen · ${todayStr}`}
       testId="screen-todays"
     >
       <div className="h-full overflow-hidden">

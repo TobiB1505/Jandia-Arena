@@ -1,9 +1,9 @@
-// Centralised status badge styles + English labels
+// Centralised status badge styles + German labels
 // Statuses from backend: scheduled | live | halftime | finished
 
 const STYLE = {
   upcoming: {
-    label: "UPCOMING",
+    label: "BEVORSTEHEND",
     cls: "bg-white/5 text-blue-100 ring-1 ring-white/15",
     dot: false,
   },
@@ -13,12 +13,12 @@ const STYLE = {
     dot: true,
   },
   halftime: {
-    label: "HALFTIME",
+    label: "HALBZEIT",
     cls: "bg-amber-500/15 text-amber-300 ring-1 ring-amber-400/40",
     dot: false,
   },
   fulltime: {
-    label: "FULL TIME",
+    label: "ABPFIFF",
     cls: "bg-blue-500/10 text-blue-200 ring-1 ring-blue-400/30",
     dot: false,
   },

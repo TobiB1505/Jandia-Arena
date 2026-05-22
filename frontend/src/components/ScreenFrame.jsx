@@ -25,7 +25,7 @@ export const ScreenFrame = ({ title, subtitle, children, testId }) => {
         <div className="flex items-center gap-3 text-blue-300">
           <span className="h-3 w-3 rounded-full bg-blue-400 shadow-[0_0_12px_rgba(96,165,250,0.9)]" />
           <span className="text-xl font-semibold uppercase tracking-[0.3em]">
-            Live Broadcast
+            Live-Übertragung
           </span>
         </div>
       </div>

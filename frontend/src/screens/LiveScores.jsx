@@ -62,12 +62,12 @@ export const LiveScores = ({ matches }) => {
   if (!matches || matches.length === 0) {
     return (
       <ScreenFrame
-        title="Live Scores"
-        subtitle="Currently no live matches"
+        title="Live-Spielstände"
+        subtitle="Aktuell keine laufenden Spiele"
         testId="screen-live"
       >
         <div className="flex h-full items-center justify-center text-3xl text-blue-200">
-          Currently no live matches.
+          Aktuell keine laufenden Spiele.
         </div>
       </ScreenFrame>
     );
@@ -82,8 +82,8 @@ export const LiveScores = ({ matches }) => {
 
   return (
     <ScreenFrame
-      title="Live Scores"
-      subtitle={`${matches.length} matches in progress`}
+      title="Live-Spielstände"
+      subtitle={`${matches.length} laufende Begegnungen`}
       testId="screen-live"
     >
       <div className={`grid h-full gap-6 ${gridCols}`}>

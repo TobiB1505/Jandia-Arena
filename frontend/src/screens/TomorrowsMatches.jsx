@@ -53,12 +53,12 @@ export const TomorrowsMatches = ({ matches }) => {
   if (!matches || matches.length === 0) {
     return (
       <ScreenFrame
-        title="Tomorrow's Matches"
+        title="Morgige Spiele"
         subtitle={dateStr}
         testId="screen-tomorrow"
       >
         <div className="flex h-full items-center justify-center text-3xl text-blue-200">
-          No fixtures scheduled for tomorrow.
+          Keine Spiele für morgen geplant.
         </div>
       </ScreenFrame>
     );
@@ -66,8 +66,8 @@ export const TomorrowsMatches = ({ matches }) => {
 
   return (
     <ScreenFrame
-      title="Tomorrow's Matches"
-      subtitle={`${matches.length} fixtures · ${dateStr}`}
+      title="Morgige Spiele"
+      subtitle={`${matches.length} Begegnungen · ${dateStr}`}
       testId="screen-tomorrow"
     >
       <div className="h-full overflow-hidden">
