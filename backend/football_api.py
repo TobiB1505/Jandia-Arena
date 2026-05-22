@@ -1,4 +1,8 @@
-"""Live data source: API-Football (api-sports.io) with cache + graceful fallback."""
+"""Live data source: Football-Data.org v4 with cache + graceful demo fallback.
+
+Free tier: 10 requests/minute, supports Tier-1 competitions including WC, CL, EC,
+Bundesliga (BL1), Premier League (PL), La Liga (PD), Serie A (SA), Ligue 1 (FL1).
+"""
 import os
 import time
 import logging
@@ -8,13 +12,13 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-API_BASE = "https://v3.football.api-sports.io"
-CACHE_TTL_FIXTURES = 180   # 3 minutes – fixtures + live scores
-CACHE_TTL_STANDINGS = 1800  # 30 minutes
+API_BASE = "https://api.football-data.org/v4"
+CACHE_TTL_FIXTURES = 180     # 3 min – fixtures + live scores
+CACHE_TTL_STANDINGS = 1800   # 30 min
 
 
-# Country → ISO flag code + German display name
-# Covers all teams typically in FIFA World Cup
+# Team / Country → ISO flag code + German display name.
+# Football-Data.org returns team.name in English (e.g. "Germany").
 COUNTRY_INFO = {
     "Germany": ("DE", "Deutschland"),
     "Spain": ("ES", "Spanien"),
@@ -37,16 +41,14 @@ COUNTRY_INFO = {
     "Denmark": ("DK", "Dänemark"),
     "Poland": ("PL", "Polen"),
     "Senegal": ("SN", "Senegal"),
-    "South-Korea": ("KR", "Südkorea"),
     "Korea Republic": ("KR", "Südkorea"),
     "South Korea": ("KR", "Südkorea"),
+    "IR Iran": ("IR", "Iran"),
     "Iran": ("IR", "Iran"),
-    "Saudi-Arabia": ("SA", "Saudi-Arabien"),
     "Saudi Arabia": ("SA", "Saudi-Arabien"),
     "Tunisia": ("TN", "Tunesien"),
     "Australia": ("AU", "Australien"),
     "Canada": ("CA", "Kanada"),
-    "Costa-Rica": ("CR", "Costa Rica"),
     "Costa Rica": ("CR", "Costa Rica"),
     "Cameroon": ("CM", "Kamerun"),
     "Ecuador": ("EC", "Ecuador"),
@@ -59,10 +61,12 @@ COUNTRY_INFO = {
     "Austria": ("AT", "Österreich"),
     "Hungary": ("HU", "Ungarn"),
     "Turkey": ("TR", "Türkei"),
+    "Türkiye": ("TR", "Türkei"),
     "Greece": ("GR", "Griechenland"),
     "Egypt": ("EG", "Ägypten"),
     "Nigeria": ("NG", "Nigeria"),
     "Algeria": ("DZ", "Algerien"),
+    "Côte d'Ivoire": ("CI", "Elfenbeinküste"),
     "Ivory Coast": ("CI", "Elfenbeinküste"),
     "Colombia": ("CO", "Kolumbien"),
     "Chile": ("CL", "Chile"),
@@ -75,27 +79,68 @@ COUNTRY_INFO = {
     "Romania": ("RO", "Rumänien"),
     "Slovakia": ("SK", "Slowakei"),
     "Ukraine": ("UA", "Ukraine"),
-    "Bosnia and Herzegovina": ("BA", "Bosnien-Herzegowina"),
+    "Bosnia-Herzegovina": ("BA", "Bosnien-Herzegowina"),
     "Albania": ("AL", "Albanien"),
     "Iceland": ("IS", "Island"),
     "Republic of Ireland": ("IE", "Irland"),
     "Northern Ireland": ("GB-NIR", "Nordirland"),
     "Scotland": ("GB-SCT", "Schottland"),
+    "South Africa": ("ZA", "Südafrika"),
+    "Haiti": ("HT", "Haiti"),
+    "Curaçao": ("CW", "Curaçao"),
+    "Curacao": ("CW", "Curaçao"),
+    "Iraq": ("IQ", "Irak"),
+    "Jordan": ("JO", "Jordanien"),
+    "DR Congo": ("CD", "DR Kongo"),
+    "Congo DR": ("CD", "DR Kongo"),
+    "Uzbekistan": ("UZ", "Usbekistan"),
+    "Panama": ("PA", "Panama"),
+    "Cabo Verde": ("CV", "Kap Verde"),
+    "Cape Verde": ("CV", "Kap Verde"),
+    "Russia": ("RU", "Russland"),
+    "Slovenia": ("SI", "Slowenien"),
+    "Bulgaria": ("BG", "Bulgarien"),
+    "Finland": ("FI", "Finnland"),
+    "Israel": ("IL", "Israel"),
+}
+
+# 3-letter ISO (FIFA TLA) → 2-letter ISO fallback when name lookup fails.
+TLA_TO_CODE = {
+    "GER": "DE", "ESP": "ES", "FRA": "FR", "BRA": "BR", "ARG": "AR",
+    "ENG": "GB-ENG", "POR": "PT", "NED": "NL", "ITA": "IT", "BEL": "BE",
+    "CRO": "HR", "URU": "UY", "URY": "UY", "MEX": "MX", "USA": "US",
+    "JPN": "JP", "MAR": "MA", "SUI": "CH", "DEN": "DK", "POL": "PL",
+    "SEN": "SN", "KOR": "KR", "IRN": "IR", "KSA": "SA", "TUN": "TN",
+    "AUS": "AU", "CAN": "CA", "CRC": "CR", "CMR": "CM", "ECU": "EC",
+    "GHA": "GH", "QAT": "QA", "SRB": "RS", "WAL": "GB-WLS", "NOR": "NO",
+    "SWE": "SE", "AUT": "AT", "HUN": "HU", "TUR": "TR", "GRE": "GR",
+    "EGY": "EG", "NGA": "NG", "ALG": "DZ", "CIV": "CI", "COL": "CO",
+    "CHI": "CL", "PER": "PE", "PAR": "PY", "VEN": "VE", "NZL": "NZ",
+    "CZE": "CZ", "ROU": "RO", "SVK": "SK", "UKR": "UA", "BIH": "BA",
+    "ALB": "AL", "ISL": "IS", "IRL": "IE", "NIR": "GB-NIR", "SCO": "GB-SCT",
+    "RSA": "ZA", "HAI": "HT", "CUW": "CW", "IRQ": "IQ", "JOR": "JO",
+    "COD": "CD", "UZB": "UZ", "PAN": "PA", "CPV": "CV", "RUS": "RU",
+    "SVN": "SI", "BUL": "BG", "FIN": "FI", "ISR": "IL",
 }
 
 
-def _country_meta(country: Optional[str], team_name: str) -> Tuple[str, str, str]:
-    """Return (iso_code, german_name, short3)."""
-    info = COUNTRY_INFO.get(country or "")
+def _team_meta(team: dict) -> Tuple[str, str, str]:
+    """Return (iso_code, german_name, short3) from a football-data team object."""
+    name = team.get("name") or team.get("shortName") or "—"
+    tla = team.get("tla") or name[:3].upper()
+    info = COUNTRY_INFO.get(name)
     if info:
         code, de_name = info
+    elif tla in TLA_TO_CODE:
+        code = TLA_TO_CODE[tla]
+        de_name = name
     else:
-        code, de_name = ("UN", team_name)
-    short = team_name[:3].upper() if team_name else "—"
-    return code, de_name, short
+        code = "UN"
+        de_name = name
+    return code, de_name, tla
 
 
-# ---------- Cache helpers ----------
+# ---------- Cache ----------
 _cache: dict = {}
 
 
@@ -113,98 +158,115 @@ def _cache_set(key: str, value: Any):
     _cache[key] = (time.time(), value)
 
 
-# ---------- API client ----------
-async def _api_get(path: str, params: dict) -> Optional[list]:
+# ---------- HTTP client ----------
+async def _api_get(path: str, params: dict | None = None) -> Optional[dict]:
     key = os.environ.get("FOOTBALL_API_KEY", "").strip()
     if not key:
         return None
-    headers = {"x-apisports-key": key}
+    headers = {"X-Auth-Token": key}
     try:
         async with httpx.AsyncClient(timeout=8.0) as client:
-            r = await client.get(f"{API_BASE}{path}", params=params, headers=headers)
-        if r.status_code != 200:
-            logger.warning("API-Football %s → %s: %s", path, r.status_code, r.text[:200])
+            r = await client.get(
+                f"{API_BASE}{path}", params=params or {}, headers=headers
+            )
+        if r.status_code == 429:
+            logger.warning("Football-Data rate limited (429) for %s", path)
             return None
-        data = r.json()
-        if data.get("errors"):
-            logger.warning("API-Football %s errors: %s", path, data["errors"])
-        return data.get("response") or []
+        if r.status_code != 200:
+            logger.warning(
+                "Football-Data %s → %s: %s", path, r.status_code, r.text[:200]
+            )
+            return None
+        return r.json()
     except Exception as e:
-        logger.warning("API-Football request failed (%s): %s", path, e)
+        logger.warning("Football-Data request failed (%s): %s", path, e)
         return None
 
 
 # ---------- Status mapping ----------
-_FINISHED = {"FT", "AET", "PEN", "AWD", "WO"}
-_LIVE = {"1H", "2H", "ET", "P", "LIVE"}
+# Football-Data.org status values
+_FINISHED = {"FINISHED", "AWARDED"}
+_LIVE = {"IN_PLAY", "LIVE"}
+_HALFTIME = {"PAUSED"}
+_SCHEDULED = {"SCHEDULED", "TIMED", "POSTPONED", "SUSPENDED"}
 
 
-def _map_status(short_code: str, elapsed: Optional[int]):
-    if short_code in _FINISHED:
+def _map_status(status: str, minute: Optional[int]) -> Tuple[str, Optional[int]]:
+    if status in _FINISHED:
         return "finished", None
-    if short_code == "HT":
+    if status in _HALFTIME:
         return "halftime", 45
-    if short_code in _LIVE:
-        return "live", int(elapsed or 0) or 1
+    if status in _LIVE:
+        return "live", int(minute or 0) or 1
     return "scheduled", None
+
+
+# ---------- Stage formatting ----------
+_STAGE_DE = {
+    "GROUP_STAGE": "Gruppenphase",
+    "LAST_16": "Achtelfinale",
+    "ROUND_OF_16": "Achtelfinale",
+    "QUARTER_FINALS": "Viertelfinale",
+    "SEMI_FINALS": "Halbfinale",
+    "FINAL": "Finale",
+    "THIRD_PLACE": "Spiel um Platz 3",
+    "PRELIMINARY_ROUND": "Vorrunde",
+    "PLAY_OFFS": "Playoffs",
+    "REGULAR_SEASON": "Hauptrunde",
+}
+
+
+def _format_stage(stage: Optional[str], group: Optional[str]) -> str:
+    label = _STAGE_DE.get((stage or "").upper(), stage or "")
+    if (stage or "").upper() == "GROUP_STAGE" and group:
+        # group can be "GROUP_A" or "A" – normalise
+        g = group.replace("GROUP_", "").strip()
+        return f"Gruppe {g}"
+    return label or ""
 
 
 # ---------- Public API ----------
 async def fetch_fixtures(date_str: str) -> Optional[list]:
-    """Fetch fixtures for a given date (YYYY-MM-DD) from the configured league/season.
-    Returns list of mapped match dicts, or None if API unavailable / no data.
-    """
+    """Fetch fixtures for a given date (YYYY-MM-DD)."""
     cache_key = f"fixtures:{date_str}"
     cached = _cache_get(cache_key, CACHE_TTL_FIXTURES)
     if cached is not None:
         return cached
 
-    league = os.environ.get("FOOTBALL_LEAGUE_ID", "1")
-    season = os.environ.get("FOOTBALL_SEASON", "2026")
-    raw = await _api_get(
-        "/fixtures",
-        {"date": date_str, "league": league, "season": season, "timezone": "Europe/Berlin"},
+    competition = os.environ.get("FOOTBALL_COMPETITION", "WC")
+    data = await _api_get(
+        f"/competitions/{competition}/matches",
+        {"dateFrom": date_str, "dateTo": date_str},
     )
-    if raw is None:
+    if data is None:
         return None
 
     matches = []
-    for item in raw:
+    for m in data.get("matches", []) or []:
         try:
-            f = item["fixture"]
-            teams = item["teams"]
-            goals = item["goals"]
-            league_info = item.get("league", {})
-
-            status_short = f["status"]["short"]
-            elapsed = f["status"].get("elapsed")
-            status, minute = _map_status(status_short, elapsed)
-
-            h_code, h_de, h_short = _country_meta(
-                teams["home"].get("country") or teams["home"].get("name"),
-                teams["home"]["name"],
-            )
-            a_code, a_de, a_short = _country_meta(
-                teams["away"].get("country") or teams["away"].get("name"),
-                teams["away"]["name"],
-            )
+            status, minute = _map_status(m.get("status", ""), m.get("minute"))
+            h_code, h_de, h_short = _team_meta(m.get("homeTeam") or {})
+            a_code, a_de, a_short = _team_meta(m.get("awayTeam") or {})
+            score = (m.get("score") or {}).get("fullTime") or {}
+            stage = _format_stage(m.get("stage"), m.get("group"))
+            venue = m.get("venue") or "—"
 
             matches.append({
-                "id": f"api-{f['id']}",
-                "stage": league_info.get("round") or "",
-                "venue": (f.get("venue") or {}).get("name") or "—",
-                "kickoff": f["date"],
+                "id": f"fd-{m['id']}",
+                "stage": stage,
+                "venue": venue,
+                "kickoff": m["utcDate"],
                 "status": status,
                 "minute": minute,
                 "home": {"code": h_code, "name": h_de, "short": h_short},
                 "away": {"code": a_code, "name": a_de, "short": a_short},
-                "home_score": goals.get("home"),
-                "away_score": goals.get("away"),
+                "home_score": score.get("home"),
+                "away_score": score.get("away"),
             })
         except Exception as e:
             logger.warning("fixture map failed: %s", e)
 
-    matches.sort(key=lambda m: m["kickoff"])
+    matches.sort(key=lambda x: x["kickoff"])
     _cache_set(cache_key, matches)
     return matches
 
@@ -215,35 +277,40 @@ async def fetch_standings() -> Optional[list]:
     if cached is not None:
         return cached
 
-    league = os.environ.get("FOOTBALL_LEAGUE_ID", "1")
-    season = os.environ.get("FOOTBALL_SEASON", "2026")
-    raw = await _api_get("/standings", {"league": league, "season": season})
-    if raw is None:
+    competition = os.environ.get("FOOTBALL_COMPETITION", "WC")
+    data = await _api_get(f"/competitions/{competition}/standings")
+    if data is None:
         return None
 
     groups = []
     try:
-        for league_obj in raw:
-            lg = league_obj.get("league", {})
-            for group in lg.get("standings", []) or []:
-                group_name = (group[0].get("group") if group else None) or "Gruppe"
-                standings = []
-                for s in group:
-                    team = s.get("team", {})
-                    all_stats = s.get("all", {})
-                    goals = all_stats.get("goals", {}) or {}
-                    code, de, short = _country_meta(team.get("name"), team.get("name", ""))
-                    standings.append({
-                        "team": {"code": code, "name": de, "short": short},
-                        "played": all_stats.get("played", 0),
-                        "wins": all_stats.get("win", 0),
-                        "draws": all_stats.get("draw", 0),
-                        "losses": all_stats.get("lose", 0),
-                        "goals_for": goals.get("for", 0),
-                        "goals_against": goals.get("against", 0),
-                        "goal_diff": s.get("goalsDiff", 0),
-                        "points": s.get("points", 0),
-                    })
+        for entry in data.get("standings", []) or []:
+            # Football-data uses stage "ALL" for tournament standings,
+            # "GROUP_STAGE" for some, and "REGULAR_SEASON" for leagues.
+            if entry.get("type") != "TOTAL":
+                continue
+            group_name_raw = entry.get("group") or "Gruppe"
+            if isinstance(group_name_raw, str):
+                # Normalise "GROUP_A" or "Group A" → "Gruppe A"
+                gn = group_name_raw.replace("GROUP_", "").replace("Group ", "").strip()
+                group_name = f"Gruppe {gn}" if gn and len(gn) <= 4 else group_name_raw
+            else:
+                group_name = "Gruppe"
+            standings = []
+            for row in entry.get("table", []) or []:
+                code, de, short = _team_meta(row.get("team") or {})
+                standings.append({
+                    "team": {"code": code, "name": de, "short": short},
+                    "played": row.get("playedGames", 0),
+                    "wins": row.get("won", 0),
+                    "draws": row.get("draw", 0),
+                    "losses": row.get("lost", 0),
+                    "goals_for": row.get("goalsFor", 0),
+                    "goals_against": row.get("goalsAgainst", 0),
+                    "goal_diff": row.get("goalDifference", 0),
+                    "points": row.get("points", 0),
+                })
+            if standings:
                 groups.append({"name": group_name, "standings": standings})
     except Exception as e:
         logger.warning("standings map failed: %s", e)

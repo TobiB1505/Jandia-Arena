@@ -46,6 +46,20 @@ Create a 16:9 TV dashboard web app for "JANDIA ARENA". The app will be displayed
 - [x] All status badges in English (per spec)
 - [x] 16 unique national teams across 4 groups, no duplicates
 
+## Iteration 3 (2026-02-22) – Vollständige Deutsche Lokalisierung + Logo
+- [x] Komplette UI auf Deutsch (Status-Badges, Screen-Titel, Tabellen-Spalten, Footer, Buttons)
+- [x] CSS-Monogramm-Logo (keine Transparenz mehr)
+
+## Iteration 4 (2026-02-22) – Robinson Branding + Live-API
+- [x] Robinson-Logo eingebunden (eigenes Image-Asset im Header)
+- [x] **Football-Data.org v4 Integration** (WM/competition=WC), Saison 2026
+- [x] Backend `football_api.py` mit Cache (Fixtures 3 min, Standings 30 min) + Graceful Fallback
+- [x] Endpoint `/api/source` zeigt Datenquelle (api/demo/api+demo Mix)
+- [x] Dynamische Status-Badge im Footer: DATEN · LIVE-API / DATEN · API + DEMO / DEMO · Ersatzdaten
+- [x] Land→ISO Mapping für ~70 WM-Teams mit deutschen Namen
+- [x] Group Tables Screen handhabt 12 WM-2026-Gruppen (4×3 Compact-Layout) – Echtdaten von Football-Data.org
+- [x] Match-Screens fallen automatisch auf Demo-Daten zurück solange WM 2026 noch nicht gestartet hat
+
 ## Backlog (P1)
 - Real football API integration toggle (env-driven), e.g. API-Football
 - Group standings screen

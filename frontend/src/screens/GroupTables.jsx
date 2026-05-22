@@ -4,12 +4,12 @@ import Flag from "../components/Flag";
 const GroupCard = ({ group, compact = false, padClass = "p-6" }) => (
   <div
     data-testid={`group-${group.name.replace(/\s+/g, "-").toLowerCase()}`}
-    className={`flex flex-col rounded-sm border border-blue-400/25 bg-[#111A3A]/80 ${padClass}`}
+    className={`flex min-h-0 flex-col overflow-hidden rounded-sm border border-blue-400/25 bg-[#111A3A]/80 ${padClass}`}
   >
-    <div className="mb-3 flex items-center justify-between border-b border-blue-400/20 pb-2">
+    <div className={`flex items-center justify-between border-b border-blue-400/20 ${compact ? "mb-1.5 pb-1.5" : "mb-3 pb-2"}`}>
       <h3
         className={`font-display uppercase tracking-[0.15em] text-white ${
-          compact ? "text-2xl" : "text-3xl"
+          compact ? "text-xl" : "text-3xl"
         }`}
       >
         {group.name}
@@ -21,10 +21,10 @@ const GroupCard = ({ group, compact = false, padClass = "p-6" }) => (
 
     {/* Header row */}
     <div
-      className={`grid items-center gap-1 pb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-blue-300/80 ${
+      className={`grid items-center gap-1 text-[10px] font-bold uppercase tracking-[0.2em] text-blue-300/80 ${
         compact
-          ? "grid-cols-[24px_minmax(0,1fr)_28px_28px_28px_28px_32px_36px]"
-          : "grid-cols-[36px_minmax(0,1fr)_repeat(5,40px)_56px]"
+          ? "grid-cols-[20px_minmax(0,1fr)_24px_22px_22px_22px_30px_30px] pb-1"
+          : "grid-cols-[36px_minmax(0,1fr)_repeat(5,40px)_56px] pb-1.5"
       }`}
     >
       <span>#</span>
@@ -43,24 +43,24 @@ const GroupCard = ({ group, compact = false, padClass = "p-6" }) => (
         <div
           key={`${group.name}-${s.team.short}-${i}`}
           data-testid={`row-${group.name.replace(/\s+/g, "-").toLowerCase()}-${i}`}
-          className={`grid items-center gap-1 border-t border-blue-400/10 py-1.5 ${
+          className={`grid items-center gap-1 border-t border-blue-400/10 ${
             compact
-              ? "grid-cols-[24px_minmax(0,1fr)_28px_28px_28px_28px_32px_36px]"
+              ? "grid-cols-[20px_minmax(0,1fr)_24px_22px_22px_22px_30px_30px] py-1"
               : "grid-cols-[36px_minmax(0,1fr)_repeat(5,40px)_56px] py-2.5"
           } ${qualified ? "text-white" : "text-blue-200/70"}`}
         >
           <span
-            className={`font-display ${compact ? "text-sm" : "text-xl"} ${
+            className={`font-display ${compact ? "text-xs" : "text-xl"} ${
               qualified ? "text-blue-300" : "text-blue-200/50"
             }`}
           >
             {i + 1}
           </span>
-          <div className="flex items-center gap-2 min-w-0">
-            <Flag code={s.team.code} size={compact ? 22 : 32} />
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Flag code={s.team.code} size={compact ? 18 : 32} />
             <span
               className={`truncate font-display uppercase tracking-wider ${
-                compact ? "text-base" : "text-2xl"
+                compact ? "text-sm" : "text-2xl"
               }`}
             >
               {s.team.short}
@@ -68,42 +68,42 @@ const GroupCard = ({ group, compact = false, padClass = "p-6" }) => (
           </div>
           <span
             className={`text-center font-primary tabular-nums ${
-              compact ? "text-sm" : "text-xl"
+              compact ? "text-xs" : "text-xl"
             }`}
           >
             {s.played}
           </span>
           <span
             className={`text-center font-primary tabular-nums ${
-              compact ? "text-sm" : "text-xl"
+              compact ? "text-xs" : "text-xl"
             }`}
           >
             {s.wins}
           </span>
           <span
             className={`text-center font-primary tabular-nums ${
-              compact ? "text-sm" : "text-xl"
+              compact ? "text-xs" : "text-xl"
             }`}
           >
             {s.draws}
           </span>
           <span
             className={`text-center font-primary tabular-nums ${
-              compact ? "text-sm" : "text-xl"
+              compact ? "text-xs" : "text-xl"
             }`}
           >
             {s.losses}
           </span>
           <span
             className={`text-center font-primary tabular-nums ${
-              compact ? "text-sm" : "text-xl"
+              compact ? "text-xs" : "text-xl"
             }`}
           >
             {s.goal_diff > 0 ? `+${s.goal_diff}` : s.goal_diff}
           </span>
           <span
             className={`text-right font-display tabular-nums ${
-              compact ? "text-base" : "text-2xl"
+              compact ? "text-sm" : "text-2xl"
             }`}
           >
             {s.points}
@@ -129,8 +129,8 @@ export const GroupTables = ({ groups }) => {
   const gridClasses =
     count <= 4
       ? "grid h-full grid-cols-2 grid-rows-2 gap-6"
-      : "grid h-full grid-cols-4 grid-rows-2 gap-4";
-  const padClass = count <= 4 ? "p-6" : "p-4";
+      : "grid h-full grid-cols-4 grid-rows-3 gap-3";
+  const padClass = count <= 4 ? "p-6" : "p-3";
 
   return (
     <ScreenFrame
