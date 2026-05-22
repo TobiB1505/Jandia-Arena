@@ -1,25 +1,25 @@
 import { useEffect, useState } from "react";
 
+const ROBINSON_LOGO =
+  "https://customer-assets.emergentagent.com/job_match-hub-tv/artifacts/mbo5fkxu_channels4_profile.jpg";
+
 function pad(n) {
   return n.toString().padStart(2, "0");
 }
 
-// Custom CSS monogram logo – solid dark-blue rounded square, no transparency artifacts.
+// Robinson hotel logo on its native deep-blue square – no transparency, no halo.
 const LogoMark = () => (
   <div
     data-testid="ja-logo"
-    aria-label="Jandia Arena"
-    className="relative flex h-16 w-16 items-center justify-center rounded-md bg-gradient-to-br from-[#1E3A8A] to-[#0A1128] shadow-[0_4px_24px_rgba(37,99,235,0.45)] ring-1 ring-blue-300/40"
+    aria-label="Robinson · Jandia Arena"
+    className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-md shadow-[0_4px_24px_rgba(37,99,235,0.45)] ring-1 ring-blue-300/30"
   >
-    {/* inner ring */}
-    <span className="absolute inset-1 rounded-sm ring-1 ring-blue-300/25" />
-    {/* monogram */}
-    <span className="font-display text-3xl leading-none tracking-tight text-white">
-      JA
-    </span>
-    {/* corner accents */}
-    <span className="absolute left-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-blue-400" />
-    <span className="absolute right-1.5 bottom-1.5 h-1.5 w-1.5 rounded-full bg-cyan-300/80" />
+    <img
+      src={ROBINSON_LOGO}
+      alt="Robinson"
+      className="h-full w-full object-cover"
+      draggable={false}
+    />
   </div>
 );
 
