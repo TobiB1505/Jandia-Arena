@@ -1,4 +1,45 @@
-@import url("https://fonts.googleapis.com/css2?family=Anton&family=Outfit:wght@300;400;500;600;700;800;900&display=swap");
+@font-face {
+    font-family: "Cera ROB";
+    src: url("./fonts/CeraROB-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Cera ROB";
+    src: url("./fonts/CeraROB-RegularItalic.ttf") format("truetype");
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Cera ROB";
+    src: url("./fonts/CeraROB-Medium.ttf") format("truetype");
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Cera ROB";
+    src: url("./fonts/CeraROB-MediumItalic.ttf") format("truetype");
+    font-weight: 500;
+    font-style: italic;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Cera ROB";
+    src: url("./fonts/CeraROB-Bold.ttf") format("truetype");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Cera ROB";
+    src: url("./fonts/CeraROB-BoldItalic.ttf") format("truetype");
+    font-weight: 700;
+    font-style: italic;
+    font-display: swap;
+}
 
 @tailwind base;
 @tailwind components;
@@ -13,19 +54,21 @@ body,
     height: 100%;
     background: #0a1128;
     color: #ffffff;
-    font-family: "Outfit", sans-serif;
+    font-family: "Cera ROB", "Outfit", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow: hidden;
 }
 
+/* Display headings: Cera ROB Bold with broadcast tracking */
 .font-display {
-    font-family: "Anton", "Outfit", sans-serif;
+    font-family: "Cera ROB", "Outfit", sans-serif;
+    font-weight: 700;
     letter-spacing: 0.04em;
 }
 
 .font-primary {
-    font-family: "Outfit", sans-serif;
+    font-family: "Cera ROB", "Outfit", sans-serif;
 }
 
 /* Live pulse */
@@ -72,6 +115,24 @@ body,
 .refresh-bar {
     transform-origin: left center;
     animation: ja-refresh 60s linear infinite;
+}
+
+/* Robinson logo soft glow ring */
+@keyframes ja-logo-glow {
+    0%,
+    100% {
+        box-shadow:
+            0 0 0 1px rgba(96, 165, 250, 0.25),
+            0 8px 32px rgba(37, 99, 235, 0.45);
+    }
+    50% {
+        box-shadow:
+            0 0 0 1px rgba(96, 165, 250, 0.45),
+            0 12px 40px rgba(37, 99, 235, 0.6);
+    }
+}
+.logo-ring {
+    animation: ja-logo-glow 4.5s ease-in-out infinite;
 }
 
 @layer base {

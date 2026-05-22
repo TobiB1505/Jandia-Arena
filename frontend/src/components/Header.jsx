@@ -7,12 +7,12 @@ function pad(n) {
   return n.toString().padStart(2, "0");
 }
 
-// Robinson hotel logo on its native deep-blue square – no transparency, no halo.
+// Robinson hotel logo – round, with soft glowing ring, flowing into the dark header.
 const LogoMark = () => (
   <div
     data-testid="ja-logo"
     aria-label="Robinson · Jandia Arena"
-    className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-md shadow-[0_4px_24px_rgba(37,99,235,0.45)] ring-1 ring-blue-300/30"
+    className="logo-ring relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full"
   >
     <img
       src={ROBINSON_LOGO}
@@ -20,6 +20,8 @@ const LogoMark = () => (
       className="h-full w-full object-cover"
       draggable={false}
     />
+    {/* subtle inner highlight to blend edge */}
+    <span className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-inset ring-white/15" />
   </div>
 );
 
