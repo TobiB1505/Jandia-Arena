@@ -7,25 +7,28 @@ function pad(n) {
   return n.toString().padStart(2, "0");
 }
 
-// Robinson hotel logo – round, with soft glowing ring, flowing into the dark header.
-const LogoMark = () => (
-  <div
+// Robinson hotel logo – round, with soft glowing ring. Clickable: toggles fullscreen.
+const LogoMark = ({ onClick, isFullscreen }) => (
+  <button
+    type="button"
     data-testid="ja-logo"
-    aria-label="Robinson · Jandia Arena"
-    className="logo-ring relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full"
+    onClick={onClick}
+    aria-label={isFullscreen ? "Vollbild beenden" : "Vollbild aktivieren"}
+    title={isFullscreen ? "Vollbild beenden" : "Vollbild aktivieren"}
+    className="logo-ring group relative flex h-20 w-20 cursor-pointer items-center justify-center overflow-hidden rounded-full border-0 p-0 outline-none focus:ring-2 focus:ring-blue-300/50"
   >
     <img
       src={ROBINSON_LOGO}
       alt="Robinson"
-      className="h-full w-full object-cover"
+      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
       draggable={false}
     />
     {/* subtle inner highlight to blend edge */}
     <span className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-inset ring-white/15" />
-  </div>
+  </button>
 );
 
-export const Header = ({ refreshKey }) => {
+export const Header = ({ refreshKey, slideDurationMs, onLogoClick, isFullscreen }) => {
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -47,7 +50,7 @@ export const Header = ({ refreshKey }) => {
       className="relative z-20 flex items-center justify-between px-12 pt-8 pb-7"
     >
       <div className="flex items-center gap-6">
-        <LogoMark />
+        <LogoMark onClick={onLogoClick} isFullscreen={isFullscreen} />
         <div className="flex flex-col leading-none">
           <span
             className="relative inline-block font-display text-4xl tracking-[0.18em] text-white"
@@ -86,11 +89,12 @@ export const Header = ({ refreshKey }) => {
         </div>
       </div>
 
-      {/* refresh progress bar */}
+      {/* slide progress bar */}
       <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-blue-900/40">
         <div
           key={refreshKey}
           className="refresh-bar h-full bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-500"
+          style={{ animationDuration: `${(slideDurationMs || 15000) / 1000}s` }}
         />
       </div>
     </header>

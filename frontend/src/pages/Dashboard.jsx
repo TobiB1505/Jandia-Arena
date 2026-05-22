@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { AnimatePresence } from "framer-motion";
-import { Maximize2, Minimize2 } from "lucide-react";
 import Header from "../components/Header";
 import TodaysMatches from "../screens/TodaysMatches";
 import NextMatch from "../screens/NextMatch";
@@ -148,7 +147,12 @@ export default function Dashboard() {
       }}
     >
       <div className="broadcast-overlay relative flex h-full w-full flex-col">
-        <Header refreshKey={refreshKey} />
+        <Header
+          refreshKey={`${screenIdx}-${refreshKey}`}
+          slideDurationMs={SCREEN_DURATION_MS[SCREENS[screenIdx]] || 15000}
+          onLogoClick={enterFullscreen}
+          isFullscreen={isFullscreen}
+        />
 
         <main className="relative flex-1 min-h-0">
           <AnimatePresence mode="wait">
@@ -168,7 +172,7 @@ export default function Dashboard() {
           </AnimatePresence>
         </main>
 
-        {/* Footer: screen indicator + fullscreen toggle */}
+        {/* Footer: screen indicator only */}
         <footer className="relative z-20 flex items-center justify-between px-12 pb-6 pt-2">
           <div
             className="flex items-center gap-4"
@@ -192,22 +196,6 @@ export default function Dashboard() {
                 </span>
               </div>
             ))}
-          </div>
-
-          <div className="flex items-center gap-4 text-sm uppercase tracking-[0.3em] text-blue-300">
-            <button
-              data-testid="fullscreen-toggle"
-              onClick={enterFullscreen}
-              aria-label={isFullscreen ? "Vollbild beenden" : "Vollbild aktivieren"}
-              title={isFullscreen ? "Vollbild beenden" : "Vollbild aktivieren"}
-              className="flex h-10 w-10 items-center justify-center rounded-full text-blue-300/60 transition hover:bg-blue-400/10 hover:text-blue-200"
-            >
-              {isFullscreen ? (
-                <Minimize2 className="h-5 w-5" strokeWidth={1.75} />
-              ) : (
-                <Maximize2 className="h-5 w-5" strokeWidth={1.75} />
-              )}
-            </button>
           </div>
         </footer>
       </div>

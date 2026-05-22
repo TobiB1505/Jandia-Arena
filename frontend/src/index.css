@@ -103,7 +103,7 @@ body,
     mix-blend-mode: overlay;
 }
 
-/* Refresh bar */
+/* Refresh / slide-progress bar */
 @keyframes ja-refresh {
     from {
         transform: scaleX(0);
@@ -114,7 +114,10 @@ body,
 }
 .refresh-bar {
     transform-origin: left center;
-    animation: ja-refresh 60s linear infinite;
+    animation-name: ja-refresh;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+    animation-iteration-count: 1;
 }
 
 /* Robinson logo soft glow ring */
