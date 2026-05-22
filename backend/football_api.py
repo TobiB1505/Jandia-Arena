@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 API_BASE = "https://api.football-data.org/v4"
 CACHE_TTL_FIXTURES = 180     # 3 min – fixtures + live scores
-CACHE_TTL_STANDINGS = 1800   # 30 min
+CACHE_TTL_STANDINGS = 300    # 5 min – standings update faster
 
 
 # Team / Country → ISO flag code + German display name.

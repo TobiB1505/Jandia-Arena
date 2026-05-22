@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { AnimatePresence } from "framer-motion";
 import Header from "../components/Header";
+import LastUpdated from "../components/LastUpdated";
 import TodaysMatches from "../screens/TodaysMatches";
 import NextMatch from "../screens/NextMatch";
 import TomorrowsMatches from "../screens/TomorrowsMatches";
@@ -51,6 +52,7 @@ export default function Dashboard() {
   const [allMatches, setAllMatches] = useState(FALLBACK_MATCHES);
   const [schedule, setSchedule] = useState([]);
   const [groups, setGroups] = useState(FALLBACK_GROUPS);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [screenIdx, setScreenIdx] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -73,6 +75,7 @@ export default function Dashboard() {
       } else {
         setGroups(FALLBACK_GROUPS);
       }
+      setLastUpdatedAt(Date.now());
     } catch (e) {
       console.warn("Falling back to demo data:", e?.message);
       setAllMatches(FALLBACK_MATCHES);
@@ -170,7 +173,7 @@ export default function Dashboard() {
           </AnimatePresence>
         </main>
 
-        {/* Footer: screen indicator only */}
+        {/* Footer: screen indicator + last updated */}
         <footer className="relative z-20 flex items-center justify-between px-12 pb-6 pt-2">
           <div
             className="flex items-center gap-4"
@@ -195,6 +198,8 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
+
+          <LastUpdated timestamp={lastUpdatedAt} />
         </footer>
       </div>
     </div>
