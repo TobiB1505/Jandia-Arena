@@ -42,34 +42,30 @@ const MatchLine = ({ match }) => {
   return (
     <div
       data-testid={`schedule-match-${match.id}`}
-      className={`flex flex-col gap-1 rounded-sm border-l-2 px-2 py-2 ${
+      className={`flex items-center gap-1.5 rounded-sm border-l-2 py-1 pl-1.5 pr-1 ${
         isDE ? "border-amber-400 bg-amber-400/5" : "border-blue-400/30 bg-white/[0.02]"
       }`}
     >
-      <div className="flex items-center justify-between">
-        <span className="font-display text-sm text-blue-100 tabular-nums">
-          {fmtTime(match.kickoff)}
-        </span>
-        {showScore && (
-          <span className="font-display text-sm text-white tabular-nums">
-            {match.home_score}:{match.away_score}
-          </span>
-        )}
-      </div>
-      <div className="flex items-center gap-1.5">
-        <Flag code={match.home.code} size={18} />
+      <span className="w-9 shrink-0 font-display text-[11px] text-blue-100 tabular-nums">
+        {fmtTime(match.kickoff)}
+      </span>
+      <div className="flex min-w-0 flex-1 items-center gap-1">
+        <Flag code={match.home.code} size={14} />
         <span
-          className={`truncate font-display text-sm uppercase tracking-wider ${
+          className={`truncate font-display text-[11px] uppercase tracking-wide ${
             isDE ? "text-amber-200" : "text-white"
           }`}
         >
           {match.home.short}
         </span>
       </div>
-      <div className="flex items-center gap-1.5">
-        <Flag code={match.away.code} size={18} />
+      <span className="shrink-0 text-[9px] font-bold text-blue-400/70">
+        {showScore ? `${match.home_score}:${match.away_score}` : "–"}
+      </span>
+      <div className="flex min-w-0 flex-1 items-center gap-1">
+        <Flag code={match.away.code} size={14} />
         <span
-          className={`truncate font-display text-sm uppercase tracking-wider ${
+          className={`truncate font-display text-[11px] uppercase tracking-wide ${
             isDE ? "text-amber-200" : "text-white"
           }`}
         >
@@ -132,17 +128,17 @@ const DayColumn = ({ day, isToday, dateStr }) => {
         </div>
       )}
 
-      <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-hidden">
         {data.matches.length === 0 ? (
           <div className="flex flex-1 items-center justify-center text-xs uppercase tracking-[0.25em] text-blue-300/30">
             Spielfrei
           </div>
         ) : (
-          data.matches.slice(0, 4).map((m) => <MatchLine key={m.id} match={m} />)
+          data.matches.slice(0, 6).map((m) => <MatchLine key={m.id} match={m} />)
         )}
-        {data.matches.length > 4 && (
+        {data.matches.length > 6 && (
           <div className="text-center text-[10px] text-blue-300/60">
-            +{data.matches.length - 4} weitere
+            +{data.matches.length - 6} weitere
           </div>
         )}
       </div>
