@@ -1,9 +1,5 @@
-import { useEffect, useState } from "react";
 import ScreenFrame from "../components/ScreenFrame";
 import Flag from "../components/Flag";
-
-const PAGE_SIZE = 6;
-const PAGE_MS = 10000; // 10s per page
 
 // Phase → accent color (left bar + text accent)
 const PHASE_STYLE = {
@@ -24,6 +20,10 @@ function fmtTime(iso) {
     .padStart(2, "0")}`;
 }
 
+function isoDate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 function fmtDayBadge(dateStr) {
   const d = new Date(`${dateStr}T12:00:00`);
   const weekday = d.toLocaleDateString("de-DE", { weekday: "short" });
@@ -31,39 +31,42 @@ function fmtDayBadge(dateStr) {
   return { weekday: weekday.replace(".", ""), day };
 }
 
-const isGermanMatch = (m) =>
-  m.home.code === "DE" || m.away.code === "DE";
+const isGermanMatch = (m) => m.home.code === "DE" || m.away.code === "DE";
 
 const MatchLine = ({ match }) => {
   const isDE = isGermanMatch(match);
+  const showScore =
+    match.status === "finished" ||
+    match.status === "live" ||
+    match.status === "halftime";
   return (
     <div
       data-testid={`schedule-match-${match.id}`}
-      className={`grid grid-cols-[58px_minmax(0,1fr)_22px_minmax(0,1fr)] items-center gap-2 rounded-sm border-l-2 py-1.5 pl-2 pr-2 ${
-        isDE
-          ? "border-amber-400 bg-amber-400/5"
-          : "border-transparent"
+      className={`flex flex-col gap-1 rounded-sm border-l-2 px-2 py-2 ${
+        isDE ? "border-amber-400 bg-amber-400/5" : "border-blue-400/30 bg-white/[0.02]"
       }`}
     >
-      <span className="font-display text-base text-blue-100 tabular-nums">
-        {fmtTime(match.kickoff)}
-      </span>
-      <div className="flex items-center justify-end gap-1.5 min-w-0">
+      <div className="flex items-center justify-between">
+        <span className="font-display text-sm text-blue-100 tabular-nums">
+          {fmtTime(match.kickoff)}
+        </span>
+        {showScore && (
+          <span className="font-display text-sm text-white tabular-nums">
+            {match.home_score}:{match.away_score}
+          </span>
+        )}
+      </div>
+      <div className="flex items-center gap-1.5">
+        <Flag code={match.home.code} size={18} />
         <span
-          className={`truncate text-right font-display text-sm uppercase tracking-wider ${
+          className={`truncate font-display text-sm uppercase tracking-wider ${
             isDE ? "text-amber-200" : "text-white"
           }`}
         >
           {match.home.short}
         </span>
-        <Flag code={match.home.code} size={18} />
       </div>
-      <span className="text-center text-xs font-bold text-blue-400/70">
-        {match.status === "finished" || match.status === "live" || match.status === "halftime"
-          ? `${match.home_score ?? ""}:${match.away_score ?? ""}`
-          : "vs"}
-      </span>
-      <div className="flex items-center gap-1.5 min-w-0">
+      <div className="flex items-center gap-1.5">
         <Flag code={match.away.code} size={18} />
         <span
           className={`truncate font-display text-sm uppercase tracking-wider ${
@@ -77,51 +80,69 @@ const MatchLine = ({ match }) => {
   );
 };
 
-const DayCard = ({ day }) => {
-  const { weekday, day: dayNum } = fmtDayBadge(day.date);
-  const style = PHASE_STYLE[day.phase] || PHASE_STYLE["Gruppenphase"];
-  const hasGerman = day.matches.some(isGermanMatch);
+const DayColumn = ({ day, isToday, dateStr }) => {
+  const data = day || { date: dateStr, phase: "", matches: [] };
+  const { weekday, day: dayNum } = fmtDayBadge(data.date);
+  const style = PHASE_STYLE[data.phase] || PHASE_STYLE["Gruppenphase"];
+  const hasGerman = data.matches.some(isGermanMatch);
 
   return (
     <div
-      data-testid={`schedule-day-${day.date}`}
-      className={`relative flex min-h-0 flex-col overflow-hidden rounded-sm border bg-[#111A3A]/80 p-4 ${
-        hasGerman ? "border-amber-400/40" : "border-blue-400/20"
+      data-testid={`week-day-${data.date}`}
+      className={`relative flex min-h-0 flex-col overflow-hidden rounded-sm border bg-[#111A3A]/80 p-3 ${
+        hasGerman
+          ? "border-amber-400/50"
+          : isToday
+          ? "border-blue-300/60"
+          : "border-blue-400/20"
       }`}
     >
       {/* Left phase accent */}
-      <span
-        className={`absolute left-0 top-0 h-full w-[3px] ${style.bar}`}
-        aria-hidden
-      />
-      {hasGerman && (
+      {data.matches.length > 0 && (
         <span
-          className="absolute right-3 top-3 rounded-sm bg-amber-400/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-300 ring-1 ring-amber-400/40"
-          data-testid="schedule-de-tag"
-        >
-          🇩🇪 DEUTSCHLAND
-        </span>
+          className={`absolute left-0 top-0 h-full w-[3px] ${style.bar}`}
+          aria-hidden
+        />
       )}
 
-      <div className="mb-3 flex items-baseline gap-3">
-        <span className="font-display text-3xl uppercase tracking-wider text-white">
-          {weekday}
-        </span>
-        <span className="font-display text-xl text-blue-300 tabular-nums">
-          {dayNum}
-        </span>
-      </div>
-      <div className={`mb-2 text-[10px] font-bold uppercase tracking-[0.3em] ${style.text}`}>
-        {day.phase}
+      <div className="mb-2 flex items-baseline justify-between">
+        <div className="flex flex-col leading-none">
+          <span className="font-display text-2xl uppercase tracking-wider text-white">
+            {weekday}
+          </span>
+          <span className="mt-1 font-display text-base text-blue-300 tabular-nums">
+            {dayNum}
+          </span>
+        </div>
+        {isToday && (
+          <span className="rounded-sm bg-blue-400/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.2em] text-blue-200 ring-1 ring-blue-300/40">
+            Heute
+          </span>
+        )}
+        {hasGerman && !isToday && (
+          <span className="rounded-sm bg-amber-400/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.2em] text-amber-300 ring-1 ring-amber-400/40">
+            🇩🇪
+          </span>
+        )}
       </div>
 
-      <div className="flex min-h-0 flex-col gap-1 overflow-hidden">
-        {day.matches.slice(0, 5).map((m) => (
-          <MatchLine key={m.id} match={m} />
-        ))}
-        {day.matches.length > 5 && (
-          <div className="pt-1 text-center text-xs text-blue-300/70">
-            + {day.matches.length - 5} weitere
+      {data.matches.length > 0 && (
+        <div className={`mb-2 text-[9px] font-bold uppercase tracking-[0.25em] ${style.text}`}>
+          {data.phase}
+        </div>
+      )}
+
+      <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden">
+        {data.matches.length === 0 ? (
+          <div className="flex flex-1 items-center justify-center text-xs uppercase tracking-[0.25em] text-blue-300/30">
+            Spielfrei
+          </div>
+        ) : (
+          data.matches.slice(0, 4).map((m) => <MatchLine key={m.id} match={m} />)
+        )}
+        {data.matches.length > 4 && (
+          <div className="text-center text-[10px] text-blue-300/60">
+            +{data.matches.length - 4} weitere
           </div>
         )}
       </div>
@@ -130,41 +151,47 @@ const DayCard = ({ day }) => {
 };
 
 export const Schedule = ({ schedule }) => {
-  const days = schedule || [];
-  const totalPages = Math.max(1, Math.ceil(days.length / PAGE_SIZE));
-  const [page, setPage] = useState(0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  useEffect(() => {
-    if (totalPages <= 1) return;
-    const t = setInterval(
-      () => setPage((p) => (p + 1) % totalPages),
-      PAGE_MS
-    );
-    return () => clearInterval(t);
-  }, [totalPages]);
+  // Build a map of date → schedule entry (only API data we already fetched)
+  const byDate = new Map();
+  (schedule || []).forEach((d) => byDate.set(d.date, d));
 
-  if (days.length === 0) {
-    return (
-      <ScreenFrame title="Spielplan" testId="screen-schedule">
-        <div className="flex h-full items-center justify-center text-3xl text-blue-200">
-          Spielplan wird geladen…
-        </div>
-      </ScreenFrame>
-    );
+  // Always render exactly 7 columns: today + next 6 days
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    const ds = isoDate(d);
+    days.push({ dateStr: ds, isToday: i === 0, data: byDate.get(ds) || null });
   }
 
-  const start = page * PAGE_SIZE;
-  const visible = days.slice(start, start + PAGE_SIZE);
+  const fromStr = days[0].dateStr;
+  const toStr = days[6].dateStr;
+  const fromLabel = new Date(`${fromStr}T12:00:00`).toLocaleDateString("de-DE", {
+    day: "2-digit",
+    month: "long",
+  });
+  const toLabel = new Date(`${toStr}T12:00:00`).toLocaleDateString("de-DE", {
+    day: "2-digit",
+    month: "long",
+  });
 
   return (
     <ScreenFrame
-      title="Spielplan"
-      subtitle={`${days.length} Spieltage · Seite ${page + 1} von ${totalPages} · Deutschland-Spiele in Gold`}
+      title="Spielplan der Woche"
+      subtitle={`${fromLabel} – ${toLabel} · Deutschland-Spiele in Gold`}
       testId="screen-schedule"
     >
-      <div className="grid h-full grid-cols-3 grid-rows-2 gap-4">
-        {visible.map((d) => (
-          <DayCard key={d.date} day={d} />
+      <div className="grid h-full grid-cols-7 gap-3">
+        {days.map((d) => (
+          <DayColumn
+            key={d.dateStr}
+            day={d.data}
+            isToday={d.isToday}
+            dateStr={d.dateStr}
+          />
         ))}
       </div>
     </ScreenFrame>

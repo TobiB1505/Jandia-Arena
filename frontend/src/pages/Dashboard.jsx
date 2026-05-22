@@ -17,13 +17,12 @@ import {
 const REFRESH_MS = 60000;
 
 // Per-screen display duration. Group Tables stays longer because of the
-// dense information density. Schedule stays long enough to cycle all pages
-// (PAGE_SIZE=6 days, ~6 pages for 35-day tournament × 10s/page).
+// dense information density. Schedule = single 7-day week view, normal dwell.
 const SCREEN_DURATION_MS = {
   today: 15000,
   next: 15000,
   tomorrow: 15000,
-  schedule: 60000,
+  schedule: 30000,
   groups: 35000,
 };
 
@@ -36,7 +35,7 @@ const SCREEN_LABELS = {
   next: "Nächstes",
   tomorrow: "Morgen",
   schedule: "Spielplan",
-  groups: "Tabellen",
+  groups: "Gruppen",
 };
 
 function isSameDay(a, b) {

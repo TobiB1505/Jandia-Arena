@@ -119,7 +119,7 @@ def _build_matches() -> List[Match]:
             "id": "m8", "stage": "Achtelfinale", "venue": "Al Thumama",
             "kickoff": now + timedelta(hours=7, minutes=30), "home": "URU", "away": "USA",
         },
-        # TOMORROW
+        # TOMORROW – Viertelfinale
         {
             "id": "t1", "stage": "Viertelfinale", "venue": "Lusail Stadium",
             "kickoff": now + timedelta(days=1, hours=-2), "home": "GER", "away": "ESP",
@@ -135,6 +135,35 @@ def _build_matches() -> List[Match]:
         {
             "id": "t4", "stage": "Viertelfinale", "venue": "Stadium 974",
             "kickoff": now + timedelta(days=1, hours=6, minutes=30), "home": "ENG", "away": "NED",
+        },
+        # Day +2 – Halbfinale prep / Achtelfinale Tag 2
+        {
+            "id": "d2a", "stage": "Achtelfinale", "venue": "Lusail Stadium",
+            "kickoff": now + timedelta(days=2, hours=-1), "home": "CRO", "away": "JPN",
+        },
+        {
+            "id": "d2b", "stage": "Achtelfinale", "venue": "Al Bayt Stadium",
+            "kickoff": now + timedelta(days=2, hours=2), "home": "MAR", "away": "MEX",
+        },
+        # Day +3 – Halbfinale
+        {
+            "id": "d3a", "stage": "Halbfinale", "venue": "Lusail Stadium",
+            "kickoff": now + timedelta(days=3, hours=0), "home": "GER", "away": "FRA",
+        },
+        {
+            "id": "d3b", "stage": "Halbfinale", "venue": "Al Bayt Stadium",
+            "kickoff": now + timedelta(days=3, hours=3), "home": "BRA", "away": "ENG",
+        },
+        # Day +4 – Ruhetag (intentionally empty to demo "Spielfrei")
+        # Day +5 – Spiel um Platz 3
+        {
+            "id": "d5", "stage": "Spiel um Platz 3", "venue": "Khalifa International",
+            "kickoff": now + timedelta(days=5, hours=2), "home": "FRA", "away": "BRA",
+        },
+        # Day +6 – Finale
+        {
+            "id": "d6", "stage": "Finale", "venue": "Lusail Stadium",
+            "kickoff": now + timedelta(days=6, hours=4), "home": "GER", "away": "ENG",
         },
     ]
 
@@ -301,11 +330,24 @@ async def _resolve_groups() -> tuple[List[Group], str]:
 
 
 async def _resolve_matches_all() -> tuple[List[Match], str]:
-    """Full tournament schedule. Falls back to demo when API empty."""
+    """Full tournament schedule. Falls back to demo when API empty.
+
+    Also falls back to demo if the API has no matches in the next 7 days –
+    so the Schedule (week-strip) screen always shows something meaningful
+    even before/between tournaments.
+    """
     if football_api.is_api_configured():
         data = await football_api.fetch_all_matches()
         if data:
-            return [Match(**m) for m in data], "api"
+            matches = [Match(**m) for m in data]
+            n = _now()
+            week_end = n + timedelta(days=7)
+            in_window = [
+                m for m in matches
+                if n.date() <= datetime.fromisoformat(m.kickoff).date() <= week_end.date()
+            ]
+            if in_window:
+                return matches, "api"
     return _build_matches(), "demo"
 
 
