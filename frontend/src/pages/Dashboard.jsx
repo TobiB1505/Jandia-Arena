@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { AnimatePresence } from "framer-motion";
+import { Maximize2, Minimize2 } from "lucide-react";
 import Header from "../components/Header";
 import TodaysMatches from "../screens/TodaysMatches";
 import NextMatch from "../screens/NextMatch";
@@ -9,13 +10,21 @@ import GroupTables from "../screens/GroupTables";
 import {
   fetchAllMatches,
   fetchGroups,
-  fetchSource,
   FALLBACK_MATCHES,
   FALLBACK_GROUPS,
 } from "../lib/api";
 
-const ROTATE_MS = 15000;
 const REFRESH_MS = 60000;
+
+// Per-screen display duration. Group Tables stays longer because of the
+// dense information density (12 groups × 4 teams × 7 columns).
+const SCREEN_DURATION_MS = {
+  today: 15000,
+  next: 15000,
+  live: 15000,
+  tomorrow: 15000,
+  groups: 35000,
+};
 
 const BG_URL =
   "https://static.prod-images.emergentagent.com/jobs/350ac180-61fb-48e9-b8d9-50ec9465a89d/images/23f3eed9fb2fcfd8ab6a748b97925a709811830e9d7b64a20dc3c2c64c5edec7.png";
@@ -40,17 +49,15 @@ function isSameDay(a, b) {
 export default function Dashboard() {
   const [allMatches, setAllMatches] = useState(FALLBACK_MATCHES);
   const [groups, setGroups] = useState(FALLBACK_GROUPS);
-  const [source, setSource] = useState({ matches: "demo", groups: "demo", api_configured: false });
   const [screenIdx, setScreenIdx] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const [matches, grps, src] = await Promise.all([
+      const [matches, grps] = await Promise.all([
         fetchAllMatches(),
         fetchGroups(),
-        fetchSource().catch(() => null),
       ]);
       if (Array.isArray(matches) && matches.length > 0) {
         setAllMatches(matches);
@@ -62,12 +69,10 @@ export default function Dashboard() {
       } else {
         setGroups(FALLBACK_GROUPS);
       }
-      if (src) setSource(src);
     } catch (e) {
       console.warn("Falling back to demo data:", e?.message);
       setAllMatches(FALLBACK_MATCHES);
       setGroups(FALLBACK_GROUPS);
-      setSource({ matches: "demo", groups: "demo", api_configured: false });
     } finally {
       setRefreshKey((k) => k + 1);
     }
@@ -80,12 +85,13 @@ export default function Dashboard() {
   }, [load]);
 
   useEffect(() => {
-    const t = setInterval(
+    const duration = SCREEN_DURATION_MS[SCREENS[screenIdx]] || 15000;
+    const t = setTimeout(
       () => setScreenIdx((i) => (i + 1) % SCREENS.length),
-      ROTATE_MS
+      duration
     );
-    return () => clearInterval(t);
-  }, []);
+    return () => clearTimeout(t);
+  }, [screenIdx]);
 
   useEffect(() => {
     const onChange = () => setIsFullscreen(!!document.fullscreenElement);
@@ -188,45 +194,19 @@ export default function Dashboard() {
             ))}
           </div>
 
-          <div className="flex items-center gap-6 text-sm uppercase tracking-[0.3em] text-blue-300">
-            {(() => {
-              const m = source.matches === "api";
-              const g = source.groups === "api";
-              if (m && g) {
-                return (
-                  <span
-                    data-testid="live-badge"
-                    className="rounded-sm bg-emerald-500/10 px-3 py-1.5 font-bold text-emerald-300 ring-1 ring-emerald-400/30"
-                  >
-                    Daten · Live-API
-                  </span>
-                );
-              }
-              if (m || g) {
-                return (
-                  <span
-                    data-testid="mixed-badge"
-                    className="rounded-sm bg-cyan-500/10 px-3 py-1.5 font-bold text-cyan-300 ring-1 ring-cyan-400/30"
-                  >
-                    {`Daten · API + Demo`}
-                  </span>
-                );
-              }
-              return (
-                <span
-                  data-testid="demo-badge"
-                  className="rounded-sm bg-amber-500/10 px-3 py-1.5 font-bold text-amber-300 ring-1 ring-amber-400/30"
-                >
-                  Demo · Ersatzdaten
-                </span>
-              );
-            })()}
+          <div className="flex items-center gap-4 text-sm uppercase tracking-[0.3em] text-blue-300">
             <button
               data-testid="fullscreen-toggle"
               onClick={enterFullscreen}
-              className="rounded-sm border border-blue-400/30 bg-blue-500/10 px-5 py-3 text-base font-bold text-blue-100 transition hover:bg-blue-500/20"
+              aria-label={isFullscreen ? "Vollbild beenden" : "Vollbild aktivieren"}
+              title={isFullscreen ? "Vollbild beenden" : "Vollbild aktivieren"}
+              className="flex h-10 w-10 items-center justify-center rounded-full text-blue-300/60 transition hover:bg-blue-400/10 hover:text-blue-200"
             >
-              {isFullscreen ? "Vollbild beenden" : "Vollbild · TV-Modus"}
+              {isFullscreen ? (
+                <Minimize2 className="h-5 w-5" strokeWidth={1.75} />
+              ) : (
+                <Maximize2 className="h-5 w-5" strokeWidth={1.75} />
+              )}
             </button>
           </div>
         </footer>
