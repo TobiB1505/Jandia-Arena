@@ -226,6 +226,48 @@ def _format_stage(stage: Optional[str], group: Optional[str]) -> str:
 
 
 # ---------- Public API ----------
+async def fetch_all_matches() -> Optional[list]:
+    """Fetch the full competition schedule (all matches across all dates)."""
+    cache_key = "all_matches"
+    cached = _cache_get(cache_key, CACHE_TTL_FIXTURES)
+    if cached is not None:
+        return cached
+
+    competition = os.environ.get("FOOTBALL_COMPETITION", "WC")
+    data = await _api_get(f"/competitions/{competition}/matches")
+    if data is None:
+        return None
+
+    matches = []
+    for m in data.get("matches", []) or []:
+        try:
+            status, minute = _map_status(m.get("status", ""), m.get("minute"))
+            h_code, h_de, h_short = _team_meta(m.get("homeTeam") or {})
+            a_code, a_de, a_short = _team_meta(m.get("awayTeam") or {})
+            score = (m.get("score") or {}).get("fullTime") or {}
+            stage_raw = m.get("stage") or ""
+            stage = _format_stage(stage_raw, m.get("group"))
+            matches.append({
+                "id": f"fd-{m['id']}",
+                "stage": stage,
+                "stage_raw": stage_raw,
+                "venue": m.get("venue") or "—",
+                "kickoff": m["utcDate"],
+                "status": status,
+                "minute": minute,
+                "home": {"code": h_code, "name": h_de, "short": h_short},
+                "away": {"code": a_code, "name": a_de, "short": a_short},
+                "home_score": score.get("home"),
+                "away_score": score.get("away"),
+            })
+        except Exception as e:
+            logger.warning("fixture map failed: %s", e)
+
+    matches.sort(key=lambda x: x["kickoff"])
+    _cache_set(cache_key, matches)
+    return matches
+
+
 async def fetch_fixtures(date_str: str) -> Optional[list]:
     """Fetch fixtures for a given date (YYYY-MM-DD)."""
     cache_key = f"fixtures:{date_str}"

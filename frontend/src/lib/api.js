@@ -8,6 +8,11 @@ export async function fetchAllMatches() {
   return res.data;
 }
 
+export async function fetchSchedule() {
+  const res = await axios.get(`${API}/schedule`);
+  return res.data;
+}
+
 export async function fetchGroups() {
   const res = await axios.get(`${API}/groups`);
   return res.data;

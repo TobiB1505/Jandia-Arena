@@ -300,6 +300,15 @@ async def _resolve_groups() -> tuple[List[Group], str]:
     return _build_groups(), "demo"
 
 
+async def _resolve_matches_all() -> tuple[List[Match], str]:
+    """Full tournament schedule. Falls back to demo when API empty."""
+    if football_api.is_api_configured():
+        data = await football_api.fetch_all_matches()
+        if data:
+            return [Match(**m) for m in data], "api"
+    return _build_matches(), "demo"
+
+
 @api_router.get("/source")
 async def get_source():
     """Reports which data source is currently powering the dashboard."""
@@ -359,6 +368,48 @@ async def get_groups():
     groups, src = await _resolve_groups()
     _state["groups_source"] = src
     return groups
+
+
+# ---------- Schedule (full tournament, grouped by day) ----------
+class ScheduleDay(BaseModel):
+    date: str       # ISO date YYYY-MM-DD
+    phase: str      # primary phase label for the day (e.g. "Gruppenphase")
+    matches: List[Match]
+
+
+def _primary_phase(matches: List[Match]) -> str:
+    """Pick the most-advanced stage on a given day, or first non-empty stage."""
+    order = [
+        "Finale", "Spiel um Platz 3", "Halbfinale", "Viertelfinale",
+        "Achtelfinale", "Vorrunde", "Gruppenphase",
+    ]
+    stages = {m.stage for m in matches if m.stage}
+    # Group A/B/C → all roll up under "Gruppenphase" for header label
+    normalised = set()
+    for s in stages:
+        if s.startswith("Gruppe ") and len(s) <= 10:
+            normalised.add("Gruppenphase")
+        else:
+            normalised.add(s)
+    for o in order:
+        if o in normalised:
+            return o
+    return next(iter(normalised), "")
+
+
+@api_router.get("/schedule", response_model=List[ScheduleDay])
+async def get_schedule():
+    matches, src = await _resolve_matches_all()
+    _state["matches_source"] = src
+    by_day: dict[str, List[Match]] = {}
+    for m in matches:
+        d = datetime.fromisoformat(m.kickoff).date().isoformat()
+        by_day.setdefault(d, []).append(m)
+    days = []
+    for d in sorted(by_day.keys()):
+        ms = sorted(by_day[d], key=lambda x: x.kickoff)
+        days.append(ScheduleDay(date=d, phase=_primary_phase(ms), matches=ms))
+    return days
 
 
 app.include_router(api_router)

@@ -5,9 +5,11 @@ import TodaysMatches from "../screens/TodaysMatches";
 import NextMatch from "../screens/NextMatch";
 import LiveScores from "../screens/LiveScores";
 import TomorrowsMatches from "../screens/TomorrowsMatches";
+import Schedule from "../screens/Schedule";
 import GroupTables from "../screens/GroupTables";
 import {
   fetchAllMatches,
+  fetchSchedule,
   fetchGroups,
   FALLBACK_MATCHES,
   FALLBACK_GROUPS,
@@ -16,24 +18,27 @@ import {
 const REFRESH_MS = 60000;
 
 // Per-screen display duration. Group Tables stays longer because of the
-// dense information density (12 groups × 4 teams × 7 columns).
+// dense information density. Schedule stays long enough to cycle all pages
+// (PAGE_SIZE=6 days, ~6 pages for 35-day tournament × 10s/page).
 const SCREEN_DURATION_MS = {
   today: 15000,
   next: 15000,
   live: 15000,
   tomorrow: 15000,
+  schedule: 60000,
   groups: 35000,
 };
 
 const BG_URL =
   "https://static.prod-images.emergentagent.com/jobs/350ac180-61fb-48e9-b8d9-50ec9465a89d/images/23f3eed9fb2fcfd8ab6a748b97925a709811830e9d7b64a20dc3c2c64c5edec7.png";
 
-const SCREENS = ["today", "next", "live", "tomorrow", "groups"];
+const SCREENS = ["today", "next", "live", "tomorrow", "schedule", "groups"];
 const SCREEN_LABELS = {
   today: "Heute",
   next: "Nächstes",
   live: "Live",
   tomorrow: "Morgen",
+  schedule: "Spielplan",
   groups: "Tabellen",
 };
 
@@ -47,6 +52,7 @@ function isSameDay(a, b) {
 
 export default function Dashboard() {
   const [allMatches, setAllMatches] = useState(FALLBACK_MATCHES);
+  const [schedule, setSchedule] = useState([]);
   const [groups, setGroups] = useState(FALLBACK_GROUPS);
   const [screenIdx, setScreenIdx] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -54,8 +60,9 @@ export default function Dashboard() {
 
   const load = useCallback(async () => {
     try {
-      const [matches, grps] = await Promise.all([
+      const [matches, sched, grps] = await Promise.all([
         fetchAllMatches(),
+        fetchSchedule().catch(() => []),
         fetchGroups(),
       ]);
       if (Array.isArray(matches) && matches.length > 0) {
@@ -63,6 +70,7 @@ export default function Dashboard() {
       } else {
         setAllMatches(FALLBACK_MATCHES);
       }
+      if (Array.isArray(sched)) setSchedule(sched);
       if (Array.isArray(grps) && grps.length > 0) {
         setGroups(grps);
       } else {
@@ -165,6 +173,9 @@ export default function Dashboard() {
             )}
             {current === "tomorrow" && (
               <TomorrowsMatches key="tomorrow" matches={tomorrowMatches} />
+            )}
+            {current === "schedule" && (
+              <Schedule key="schedule" schedule={schedule} />
             )}
             {current === "groups" && (
               <GroupTables key="groups" groups={groups} />
