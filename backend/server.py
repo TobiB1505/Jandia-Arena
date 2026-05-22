@@ -45,9 +45,24 @@ class Match(BaseModel):
 
 
 # ---------- Demo data generator ----------
-# Anchor 'today' to current server day so the TV looks fresh every day.
+# Anchor 'today' to a configurable date so the TV behaves as if it were that day.
+# Set SIMULATE_DATE=YYYY-MM-DD in .env to anchor to a specific day (e.g. WC opening day).
+# Time-of-day stays real so the clock keeps ticking normally.
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    simulated = os.environ.get("SIMULATE_DATE", "").strip()
+    real_now = datetime.now(timezone.utc)
+    if simulated:
+        try:
+            d = datetime.strptime(simulated, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            return d.replace(
+                hour=real_now.hour,
+                minute=real_now.minute,
+                second=real_now.second,
+                microsecond=real_now.microsecond,
+            )
+        except ValueError:
+            pass
+    return real_now
 
 
 def _today_at(hour: int, minute: int = 0) -> datetime:
@@ -349,6 +364,17 @@ async def _resolve_matches_all() -> tuple[List[Match], str]:
             if in_window:
                 return matches, "api"
     return _build_matches(), "demo"
+
+
+@api_router.get("/now")
+async def get_now():
+    """Returns the dashboard's reference time (real or simulated via SIMULATE_DATE)."""
+    n = _now()
+    return {
+        "iso": n.isoformat(),
+        "date": n.strftime("%Y-%m-%d"),
+        "simulated": bool(os.environ.get("SIMULATE_DATE", "").strip()),
+    }
 
 
 @api_router.get("/source")

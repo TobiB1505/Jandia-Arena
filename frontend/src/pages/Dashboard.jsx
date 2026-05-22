@@ -10,6 +10,7 @@ import {
   fetchAllMatches,
   fetchSchedule,
   fetchGroups,
+  fetchNow,
   FALLBACK_MATCHES,
   FALLBACK_GROUPS,
 } from "../lib/api";
@@ -51,16 +52,18 @@ export default function Dashboard() {
   const [schedule, setSchedule] = useState([]);
   const [groups, setGroups] = useState(FALLBACK_GROUPS);
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
+  const [referenceDate, setReferenceDate] = useState(null);
   const [screenIdx, setScreenIdx] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const [matches, sched, grps] = await Promise.all([
+      const [matches, sched, grps, now] = await Promise.all([
         fetchAllMatches(),
         fetchSchedule().catch(() => []),
         fetchGroups(),
+        fetchNow().catch(() => null),
       ]);
       if (Array.isArray(matches) && matches.length > 0) {
         setAllMatches(matches);
@@ -73,6 +76,7 @@ export default function Dashboard() {
       } else {
         setGroups(FALLBACK_GROUPS);
       }
+      if (now?.date) setReferenceDate(now.date);
       setLastUpdatedAt(Date.now());
     } catch (e) {
       console.warn("Falling back to demo data:", e?.message);
@@ -104,25 +108,29 @@ export default function Dashboard() {
     return () => document.removeEventListener("fullscreenchange", onChange);
   }, []);
 
-  const today = new Date();
-  const tomorrow = new Date();
+  const today = referenceDate ? new Date(`${referenceDate}T00:00:00`) : new Date();
+  const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
 
   const todayMatches = useMemo(
     () => allMatches.filter((m) => isSameDay(new Date(m.kickoff), today)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [allMatches]
+    [allMatches, referenceDate]
   );
   const tomorrowMatches = useMemo(
     () => allMatches.filter((m) => isSameDay(new Date(m.kickoff), tomorrow)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [allMatches]
+    [allMatches, referenceDate]
   );
   const nextMatch = useMemo(() => {
-    const upcoming = allMatches.filter((m) => m.status === "scheduled");
+    const ref = today.getTime();
+    const upcoming = allMatches.filter(
+      (m) => m.status === "scheduled" && new Date(m.kickoff).getTime() >= ref
+    );
     upcoming.sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
     return upcoming[0] || null;
-  }, [allMatches]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allMatches, referenceDate]);
 
   const enterFullscreen = useCallback(() => {
     const el = document.documentElement;
@@ -152,19 +160,20 @@ export default function Dashboard() {
           onLogoClick={enterFullscreen}
           isFullscreen={isFullscreen}
           lastUpdatedAt={lastUpdatedAt}
+          referenceDate={referenceDate}
         />
 
         <main className="relative flex-1 min-h-0">
           <AnimatePresence mode="wait">
             {current === "today" && (
-              <TodaysMatches key="today" matches={todayMatches} />
+              <TodaysMatches key="today" matches={todayMatches} referenceDate={referenceDate} />
             )}
-            {current === "next" && <NextMatch key="next" match={nextMatch} />}
+            {current === "next" && <NextMatch key="next" match={nextMatch} referenceDate={referenceDate} />}
             {current === "tomorrow" && (
-              <TomorrowsMatches key="tomorrow" matches={tomorrowMatches} />
+              <TomorrowsMatches key="tomorrow" matches={tomorrowMatches} referenceDate={referenceDate} />
             )}
             {current === "schedule" && (
-              <Schedule key="schedule" schedule={schedule} />
+              <Schedule key="schedule" schedule={schedule} referenceDate={referenceDate} />
             )}
             {current === "groups" && (
               <GroupTables key="groups" groups={groups} />

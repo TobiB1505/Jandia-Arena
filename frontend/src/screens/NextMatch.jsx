@@ -2,13 +2,26 @@ import { useEffect, useState } from "react";
 import ScreenFrame from "../components/ScreenFrame";
 import Flag from "../components/Flag";
 
-function diffParts(target) {
-  const diff = Math.max(0, target.getTime() - Date.now());
+function diffParts(target, refNow) {
+  const diff = Math.max(0, target.getTime() - refNow);
   const total = Math.floor(diff / 1000);
   const hours = Math.floor(total / 3600);
   const minutes = Math.floor((total % 3600) / 60);
   const seconds = total % 60;
   return { hours, minutes, seconds, total };
+}
+
+/**
+ * Build a "simulated now" timestamp:
+ * - calendar date comes from referenceDate (e.g. "2026-06-11")
+ * - time of day comes from the real clock so seconds keep ticking
+ */
+function simulatedNow(referenceDate) {
+  if (!referenceDate) return Date.now();
+  const real = new Date();
+  const ref = new Date(`${referenceDate}T00:00:00`);
+  ref.setHours(real.getHours(), real.getMinutes(), real.getSeconds(), real.getMilliseconds());
+  return ref.getTime();
 }
 
 const Block = ({ value, label }) => (
@@ -22,18 +35,21 @@ const Block = ({ value, label }) => (
   </div>
 );
 
-export const NextMatch = ({ match }) => {
+export const NextMatch = ({ match, referenceDate }) => {
   const [parts, setParts] = useState(
-    match ? diffParts(new Date(match.kickoff)) : null
+    match ? diffParts(new Date(match.kickoff), simulatedNow(referenceDate)) : null
   );
 
   useEffect(() => {
     if (!match) return;
     const target = new Date(match.kickoff);
-    setParts(diffParts(target));
-    const t = setInterval(() => setParts(diffParts(target)), 1000);
+    setParts(diffParts(target, simulatedNow(referenceDate)));
+    const t = setInterval(
+      () => setParts(diffParts(target, simulatedNow(referenceDate))),
+      1000
+    );
     return () => clearInterval(t);
-  }, [match]);
+  }, [match, referenceDate]);
 
   if (!match) {
     return (

@@ -13,6 +13,11 @@ export async function fetchSchedule() {
   return res.data;
 }
 
+export async function fetchNow() {
+  const res = await axios.get(`${API}/now`);
+  return res.data;
+}
+
 export async function fetchGroups() {
   const res = await axios.get(`${API}/groups`);
   return res.data;

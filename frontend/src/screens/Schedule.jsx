@@ -150,8 +150,8 @@ const DayColumn = ({ day, isToday, dateStr }) => {
   );
 };
 
-export const Schedule = ({ schedule }) => {
-  const today = new Date();
+export const Schedule = ({ schedule, referenceDate }) => {
+  const today = referenceDate ? new Date(`${referenceDate}T00:00:00`) : new Date();
   today.setHours(0, 0, 0, 0);
 
   // Build a map of date → schedule entry (only API data we already fetched)

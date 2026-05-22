@@ -29,7 +29,7 @@ const LogoMark = ({ onClick, isFullscreen }) => (
   </button>
 );
 
-export const Header = ({ refreshKey, slideDurationMs, onLogoClick, isFullscreen, lastUpdatedAt }) => {
+export const Header = ({ refreshKey, slideDurationMs, onLogoClick, isFullscreen, lastUpdatedAt, referenceDate }) => {
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -38,7 +38,9 @@ export const Header = ({ refreshKey, slideDurationMs, onLogoClick, isFullscreen,
   }, []);
 
   const time = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-  const dateStr = now.toLocaleDateString("de-DE", {
+  // Use simulated reference date if provided, otherwise real today
+  const displayDate = referenceDate ? new Date(`${referenceDate}T12:00:00`) : now;
+  const dateStr = displayDate.toLocaleDateString("de-DE", {
     weekday: "long",
     day: "2-digit",
     month: "long",

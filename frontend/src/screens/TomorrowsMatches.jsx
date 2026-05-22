@@ -41,9 +41,10 @@ const Row = ({ match }) => (
   </div>
 );
 
-export const TomorrowsMatches = ({ matches }) => {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
+export const TomorrowsMatches = ({ matches, referenceDate }) => {
+  const base = referenceDate ? new Date(`${referenceDate}T12:00:00`) : new Date();
+  const tomorrow = new Date(base);
+  tomorrow.setDate(base.getDate() + 1);
   const dateStr = tomorrow.toLocaleDateString("de-DE", {
     weekday: "long",
     day: "2-digit",

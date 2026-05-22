@@ -65,8 +65,9 @@ const Row = ({ match }) => {
   );
 };
 
-export const TodaysMatches = ({ matches }) => {
-  const todayStr = new Date().toLocaleDateString("de-DE", {
+export const TodaysMatches = ({ matches, referenceDate }) => {
+  const refDay = referenceDate ? new Date(`${referenceDate}T12:00:00`) : new Date();
+  const todayStr = refDay.toLocaleDateString("de-DE", {
     weekday: "long",
     day: "2-digit",
     month: "long",
