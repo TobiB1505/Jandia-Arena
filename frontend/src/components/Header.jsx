@@ -44,19 +44,24 @@ export const Header = ({ refreshKey }) => {
   return (
     <header
       data-testid="ja-header"
-      className="relative z-20 flex items-center justify-between px-12 pt-8 pb-4"
+      className="relative z-20 flex items-center justify-between px-12 pt-8 pb-7"
     >
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-6">
         <LogoMark />
         <div className="flex flex-col leading-none">
           <span
-            className="font-display text-4xl tracking-[0.18em] text-white"
+            className="relative inline-block font-display text-4xl tracking-[0.18em] text-white"
             data-testid="ja-title"
           >
             JANDIA ARENA
+            {/* Robinson blue brand underline */}
+            <span
+              aria-hidden
+              className="absolute -bottom-2 left-0 h-[3px] w-full rounded-full bg-gradient-to-r from-[#0E47BA] via-[#3B82F6] to-transparent"
+            />
           </span>
           <span
-            className="mt-1 text-sm font-medium uppercase tracking-[0.4em] text-blue-300"
+            className="mt-4 text-sm font-medium uppercase tracking-[0.4em] text-blue-300"
             data-testid="ja-subtitle"
           >
             Public-Viewing-Programm

@@ -8,12 +8,12 @@ export const ScreenFrame = ({ title, subtitle, children, testId }) => {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -80 }}
       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-      className="relative flex h-full w-full flex-col px-12 pb-12"
+      className="relative flex h-full w-full flex-col px-12 pb-12 pt-4"
     >
       <div className="flex items-end justify-between border-b border-blue-400/20 pb-6">
         <div>
           <h1
-            className="font-display text-6xl uppercase tracking-[0.08em] text-white"
+            className="font-display text-6xl uppercase leading-[1.05] tracking-[0.08em] text-white"
             data-testid={`${testId}-title`}
           >
             {title}
