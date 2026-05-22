@@ -77,12 +77,15 @@ export default function Dashboard() {
         setGroups(FALLBACK_GROUPS);
       }
       if (now?.date) setReferenceDate(now.date);
-      setLastUpdatedAt(Date.now());
     } catch (e) {
       console.warn("Falling back to demo data:", e?.message);
       setAllMatches(FALLBACK_MATCHES);
       setGroups(FALLBACK_GROUPS);
     } finally {
+      // Tick the "Aktualisiert"-indicator even on partial failures – it must
+      // always reflect the most recent refresh attempt, otherwise users
+      // think the dashboard is frozen.
+      setLastUpdatedAt(Date.now());
       setRefreshKey((k) => k + 1);
     }
   }, []);
