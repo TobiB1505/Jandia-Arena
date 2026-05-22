@@ -151,3 +151,18 @@ body,
         @apply bg-background text-foreground;
     }
 }
+
+/* Hide platform-injected badge on TV display */
+#emergent-badge,
+a#emergent-badge,
+a[href*="emergent.sh"][id="emergent-badge"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    position: absolute !important;
+    left: -9999px !important;
+    top: -9999px !important;
+}
