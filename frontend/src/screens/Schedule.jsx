@@ -1,3 +1,4 @@
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import ScreenFrame from "../components/ScreenFrame";
 import Flag from "../components/Flag";
 
@@ -42,30 +43,34 @@ const MatchLine = ({ match }) => {
   return (
     <div
       data-testid={`schedule-match-${match.id}`}
-      className={`flex items-center gap-1.5 rounded-sm border-l-2 py-1 pl-1.5 pr-1 ${
+      className={`flex flex-col gap-1 rounded-sm border-l-2 px-2 py-2 ${
         isDE ? "border-amber-400 bg-amber-400/5" : "border-blue-400/30 bg-white/[0.02]"
       }`}
     >
-      <span className="w-9 shrink-0 font-display text-[11px] text-blue-100 tabular-nums">
-        {fmtTime(match.kickoff)}
-      </span>
-      <div className="flex min-w-0 flex-1 items-center gap-1">
-        <Flag code={match.home.code} size={14} />
+      <div className="flex items-center justify-between">
+        <span className="font-display text-sm text-blue-100 tabular-nums">
+          {fmtTime(match.kickoff)}
+        </span>
+        {showScore && (
+          <span className="font-display text-sm text-white tabular-nums">
+            {match.home_score}:{match.away_score}
+          </span>
+        )}
+      </div>
+      <div className="flex items-center gap-1.5">
+        <Flag code={match.home.code} size={18} />
         <span
-          className={`truncate font-display text-[11px] uppercase tracking-wide ${
+          className={`truncate font-display text-sm uppercase tracking-wider ${
             isDE ? "text-amber-200" : "text-white"
           }`}
         >
           {match.home.short}
         </span>
       </div>
-      <span className="shrink-0 text-[9px] font-bold text-blue-400/70">
-        {showScore ? `${match.home_score}:${match.away_score}` : "–"}
-      </span>
-      <div className="flex min-w-0 flex-1 items-center gap-1">
-        <Flag code={match.away.code} size={14} />
+      <div className="flex items-center gap-1.5">
+        <Flag code={match.away.code} size={18} />
         <span
-          className={`truncate font-display text-[11px] uppercase tracking-wide ${
+          className={`truncate font-display text-sm uppercase tracking-wider ${
             isDE ? "text-amber-200" : "text-white"
           }`}
         >
@@ -76,11 +81,76 @@ const MatchLine = ({ match }) => {
   );
 };
 
+/**
+ * Measures the matches column to decide how many entries fit vertically.
+ * If everything fits → show all. If not → reduce until the "+X weitere"
+ * indicator and remaining items both fit.
+ */
+function useFittingCount(containerRef, total, deps = []) {
+  const [count, setCount] = useState(total);
+
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el || total === 0) {
+      setCount(total);
+      return;
+    }
+
+    const measure = () => {
+      const children = Array.from(el.querySelectorAll("[data-match-row]"));
+      const indicator = el.querySelector("[data-overflow-indicator]");
+      if (children.length === 0) return;
+
+      const containerBottom = el.getBoundingClientRect().bottom;
+
+      // First pass: count how many children fully fit
+      let fit = 0;
+      for (let i = 0; i < children.length; i++) {
+        if (children[i].getBoundingClientRect().bottom <= containerBottom + 0.5) {
+          fit = i + 1;
+        } else {
+          break;
+        }
+      }
+
+      // If we already show fewer than total, we need to subtract one more
+      // to make room for the "+X weitere" indicator itself.
+      if (fit < total && indicator) {
+        const indicatorH = indicator.getBoundingClientRect().height;
+        // Walk back until the indicator also fits below the last visible row.
+        while (fit > 0) {
+          const lastBottom = children[fit - 1].getBoundingClientRect().bottom;
+          if (lastBottom + indicatorH <= containerBottom + 0.5) break;
+          fit -= 1;
+        }
+      }
+
+      setCount(Math.max(0, Math.min(total, fit)));
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    window.addEventListener("resize", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [total, ...deps]);
+
+  return count;
+}
+
 const DayColumn = ({ day, isToday, dateStr }) => {
   const data = day || { date: dateStr, phase: "", matches: [] };
   const { weekday, day: dayNum } = fmtDayBadge(data.date);
   const style = PHASE_STYLE[data.phase] || PHASE_STYLE["Gruppenphase"];
   const hasGerman = data.matches.some(isGermanMatch);
+
+  const listRef = useRef(null);
+  const visibleCount = useFittingCount(listRef, data.matches.length, [data.matches.length]);
+  const hiddenCount = Math.max(0, data.matches.length - visibleCount);
 
   return (
     <div
@@ -93,7 +163,6 @@ const DayColumn = ({ day, isToday, dateStr }) => {
           : "border-blue-400/20"
       }`}
     >
-      {/* Left phase accent */}
       {data.matches.length > 0 && (
         <span
           className={`absolute left-0 top-0 h-full w-[3px] ${style.bar}`}
@@ -128,17 +197,24 @@ const DayColumn = ({ day, isToday, dateStr }) => {
         </div>
       )}
 
-      <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-hidden">
+      <div ref={listRef} className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden">
         {data.matches.length === 0 ? (
           <div className="flex flex-1 items-center justify-center text-xs uppercase tracking-[0.25em] text-blue-300/30">
             Spielfrei
           </div>
         ) : (
-          data.matches.slice(0, 6).map((m) => <MatchLine key={m.id} match={m} />)
+          data.matches.map((m, idx) => (
+            <div key={m.id} data-match-row style={{ visibility: idx < visibleCount ? "visible" : "hidden" }}>
+              <MatchLine match={m} />
+            </div>
+          ))
         )}
-        {data.matches.length > 6 && (
-          <div className="text-center text-[10px] text-blue-300/60">
-            +{data.matches.length - 6} weitere
+        {hiddenCount > 0 && (
+          <div
+            data-overflow-indicator
+            className="text-center text-[10px] uppercase tracking-[0.2em] text-blue-300/60"
+          >
+            +{hiddenCount} weitere
           </div>
         )}
       </div>
@@ -150,11 +226,9 @@ export const Schedule = ({ schedule, referenceDate }) => {
   const today = referenceDate ? new Date(`${referenceDate}T00:00:00`) : new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Build a map of date → schedule entry (only API data we already fetched)
   const byDate = new Map();
   (schedule || []).forEach((d) => byDate.set(d.date, d));
 
-  // Always render exactly 7 columns: today + next 6 days
   const days = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date(today);
@@ -162,6 +236,14 @@ export const Schedule = ({ schedule, referenceDate }) => {
     const ds = isoDate(d);
     days.push({ dateStr: ds, isToday: i === 0, data: byDate.get(ds) || null });
   }
+
+  // Re-measure when fullscreen toggles
+  const [, forceRender] = useState(0);
+  useEffect(() => {
+    const onChange = () => forceRender((n) => n + 1);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
 
   const fromStr = days[0].dateStr;
   const toStr = days[6].dateStr;
