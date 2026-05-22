@@ -63,12 +63,6 @@ export const Header = ({ refreshKey, slideDurationMs, onLogoClick, isFullscreen 
               className="absolute -bottom-2 left-0 h-[3px] w-full rounded-full bg-gradient-to-r from-[#0E47BA] via-[#3B82F6] to-transparent"
             />
           </span>
-          <span
-            className="mt-4 text-sm font-medium uppercase tracking-[0.4em] text-blue-300"
-            data-testid="ja-subtitle"
-          >
-            Public-Viewing-Programm
-          </span>
         </div>
       </div>
 

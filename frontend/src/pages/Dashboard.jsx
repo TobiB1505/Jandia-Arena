@@ -3,7 +3,6 @@ import { AnimatePresence } from "framer-motion";
 import Header from "../components/Header";
 import TodaysMatches from "../screens/TodaysMatches";
 import NextMatch from "../screens/NextMatch";
-import LiveScores from "../screens/LiveScores";
 import TomorrowsMatches from "../screens/TomorrowsMatches";
 import Schedule from "../screens/Schedule";
 import GroupTables from "../screens/GroupTables";
@@ -23,7 +22,6 @@ const REFRESH_MS = 60000;
 const SCREEN_DURATION_MS = {
   today: 15000,
   next: 15000,
-  live: 15000,
   tomorrow: 15000,
   schedule: 60000,
   groups: 35000,
@@ -32,11 +30,10 @@ const SCREEN_DURATION_MS = {
 const BG_URL =
   "https://static.prod-images.emergentagent.com/jobs/350ac180-61fb-48e9-b8d9-50ec9465a89d/images/23f3eed9fb2fcfd8ab6a748b97925a709811830e9d7b64a20dc3c2c64c5edec7.png";
 
-const SCREENS = ["today", "next", "live", "tomorrow", "schedule", "groups"];
+const SCREENS = ["today", "next", "tomorrow", "schedule", "groups"];
 const SCREEN_LABELS = {
   today: "Heute",
   next: "Nächstes",
-  live: "Live",
   tomorrow: "Morgen",
   schedule: "Spielplan",
   groups: "Tabellen",
@@ -120,13 +117,6 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [allMatches]
   );
-  const liveMatches = useMemo(
-    () =>
-      allMatches.filter(
-        (m) => m.status === "live" || m.status === "halftime"
-      ),
-    [allMatches]
-  );
   const nextMatch = useMemo(() => {
     const upcoming = allMatches.filter((m) => m.status === "scheduled");
     upcoming.sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
@@ -156,7 +146,7 @@ export default function Dashboard() {
     >
       <div className="broadcast-overlay relative flex h-full w-full flex-col">
         <Header
-          refreshKey={`${screenIdx}-${refreshKey}`}
+          refreshKey={screenIdx}
           slideDurationMs={SCREEN_DURATION_MS[SCREENS[screenIdx]] || 15000}
           onLogoClick={enterFullscreen}
           isFullscreen={isFullscreen}
@@ -168,9 +158,6 @@ export default function Dashboard() {
               <TodaysMatches key="today" matches={todayMatches} />
             )}
             {current === "next" && <NextMatch key="next" match={nextMatch} />}
-            {current === "live" && (
-              <LiveScores key="live" matches={liveMatches} />
-            )}
             {current === "tomorrow" && (
               <TomorrowsMatches key="tomorrow" matches={tomorrowMatches} />
             )}
