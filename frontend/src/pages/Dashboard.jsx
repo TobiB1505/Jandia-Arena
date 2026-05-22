@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { AnimatePresence } from "framer-motion";
 import Header from "../components/Header";
-import LastUpdated from "../components/LastUpdated";
 import TodaysMatches from "../screens/TodaysMatches";
 import NextMatch from "../screens/NextMatch";
 import TomorrowsMatches from "../screens/TomorrowsMatches";
@@ -153,6 +152,7 @@ export default function Dashboard() {
           slideDurationMs={SCREEN_DURATION_MS[SCREENS[screenIdx]] || 15000}
           onLogoClick={enterFullscreen}
           isFullscreen={isFullscreen}
+          lastUpdatedAt={lastUpdatedAt}
         />
 
         <main className="relative flex-1 min-h-0">
@@ -173,7 +173,7 @@ export default function Dashboard() {
           </AnimatePresence>
         </main>
 
-        {/* Footer: screen indicator + last updated */}
+        {/* Footer: screen indicator only */}
         <footer className="relative z-20 flex items-center justify-between px-12 pb-6 pt-2">
           <div
             className="flex items-center gap-4"
@@ -198,8 +198,6 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-
-          <LastUpdated timestamp={lastUpdatedAt} />
         </footer>
       </div>
     </div>

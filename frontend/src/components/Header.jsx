@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import LastUpdated from "./LastUpdated";
 
 const ROBINSON_LOGO =
   "https://customer-assets.emergentagent.com/job_match-hub-tv/artifacts/mbo5fkxu_channels4_profile.jpg";
@@ -28,7 +29,7 @@ const LogoMark = ({ onClick, isFullscreen }) => (
   </button>
 );
 
-export const Header = ({ refreshKey, slideDurationMs, onLogoClick, isFullscreen }) => {
+export const Header = ({ refreshKey, slideDurationMs, onLogoClick, isFullscreen, lastUpdatedAt }) => {
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -47,7 +48,7 @@ export const Header = ({ refreshKey, slideDurationMs, onLogoClick, isFullscreen 
   return (
     <header
       data-testid="ja-header"
-      className="relative z-20 flex items-center justify-between px-12 pt-8 pb-7"
+      className="relative z-20 flex items-center justify-between px-12 pt-7 pb-5"
     >
       <div className="flex items-center gap-6">
         <LogoMark onClick={onLogoClick} isFullscreen={isFullscreen} />
@@ -67,9 +68,9 @@ export const Header = ({ refreshKey, slideDurationMs, onLogoClick, isFullscreen 
       </div>
 
       <div className="flex items-center gap-10">
-        <div className="text-right">
+        <div className="flex flex-col items-end gap-0.5">
           <div
-            className="font-display text-5xl text-white"
+            className="font-display text-5xl leading-none text-white"
             data-testid="ja-clock"
           >
             {time}
@@ -79,6 +80,9 @@ export const Header = ({ refreshKey, slideDurationMs, onLogoClick, isFullscreen 
             data-testid="ja-date"
           >
             {dateStr}
+          </div>
+          <div className="mt-0.5">
+            <LastUpdated timestamp={lastUpdatedAt} />
           </div>
         </div>
       </div>

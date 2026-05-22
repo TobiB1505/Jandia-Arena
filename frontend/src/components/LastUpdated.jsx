@@ -23,10 +23,10 @@ export const LastUpdated = ({ timestamp }) => {
   return (
     <div
       data-testid="last-updated"
-      className="flex items-center gap-2 pr-3 text-[10px] uppercase tracking-[0.25em] text-blue-300/55"
+      className="flex items-center justify-end gap-2 text-[10px] uppercase tracking-[0.3em] text-blue-300/55"
     >
       <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/70 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
-      <span>{format(timestamp)}</span>
+      <span>Aktualisiert · {format(timestamp)}</span>
     </div>
   );
 };
