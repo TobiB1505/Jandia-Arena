@@ -13,6 +13,11 @@ export async function fetchGroups() {
   return res.data;
 }
 
+export async function fetchSource() {
+  const res = await axios.get(`${API}/source`);
+  return res.data;
+}
+
 // In-memory demo fallback (used when backend is unreachable)
 const _mkIso = (offsetMin) =>
   new Date(Date.now() + offsetMin * 60 * 1000).toISOString();

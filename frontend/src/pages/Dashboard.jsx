@@ -9,6 +9,7 @@ import GroupTables from "../screens/GroupTables";
 import {
   fetchAllMatches,
   fetchGroups,
+  fetchSource,
   FALLBACK_MATCHES,
   FALLBACK_GROUPS,
 } from "../lib/api";
@@ -39,34 +40,34 @@ function isSameDay(a, b) {
 export default function Dashboard() {
   const [allMatches, setAllMatches] = useState(FALLBACK_MATCHES);
   const [groups, setGroups] = useState(FALLBACK_GROUPS);
-  const [usingFallback, setUsingFallback] = useState(false);
+  const [source, setSource] = useState({ matches: "demo", groups: "demo", api_configured: false });
   const [screenIdx, setScreenIdx] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const [matches, grps] = await Promise.all([
+      const [matches, grps, src] = await Promise.all([
         fetchAllMatches(),
         fetchGroups(),
+        fetchSource().catch(() => null),
       ]);
       if (Array.isArray(matches) && matches.length > 0) {
         setAllMatches(matches);
-        setUsingFallback(false);
       } else {
         setAllMatches(FALLBACK_MATCHES);
-        setUsingFallback(true);
       }
       if (Array.isArray(grps) && grps.length > 0) {
         setGroups(grps);
       } else {
         setGroups(FALLBACK_GROUPS);
       }
+      if (src) setSource(src);
     } catch (e) {
       console.warn("Falling back to demo data:", e?.message);
       setAllMatches(FALLBACK_MATCHES);
       setGroups(FALLBACK_GROUPS);
-      setUsingFallback(true);
+      setSource({ matches: "demo", groups: "demo", api_configured: false });
     } finally {
       setRefreshKey((k) => k + 1);
     }
@@ -188,21 +189,38 @@ export default function Dashboard() {
           </div>
 
           <div className="flex items-center gap-6 text-sm uppercase tracking-[0.3em] text-blue-300">
-            {usingFallback ? (
-              <span
-                data-testid="demo-badge"
-                className="rounded-sm bg-amber-500/10 px-3 py-1.5 font-bold text-amber-300 ring-1 ring-amber-400/30"
-              >
-                Demo · Ersatzdaten
-              </span>
-            ) : (
-              <span
-                data-testid="live-badge"
-                className="rounded-sm bg-emerald-500/10 px-3 py-1.5 font-bold text-emerald-300 ring-1 ring-emerald-400/30"
-              >
-                Daten · Live
-              </span>
-            )}
+            {(() => {
+              const m = source.matches === "api";
+              const g = source.groups === "api";
+              if (m && g) {
+                return (
+                  <span
+                    data-testid="live-badge"
+                    className="rounded-sm bg-emerald-500/10 px-3 py-1.5 font-bold text-emerald-300 ring-1 ring-emerald-400/30"
+                  >
+                    Daten · Live-API
+                  </span>
+                );
+              }
+              if (m || g) {
+                return (
+                  <span
+                    data-testid="mixed-badge"
+                    className="rounded-sm bg-cyan-500/10 px-3 py-1.5 font-bold text-cyan-300 ring-1 ring-cyan-400/30"
+                  >
+                    {`Daten · API + Demo`}
+                  </span>
+                );
+              }
+              return (
+                <span
+                  data-testid="demo-badge"
+                  className="rounded-sm bg-amber-500/10 px-3 py-1.5 font-bold text-amber-300 ring-1 ring-amber-400/30"
+                >
+                  Demo · Ersatzdaten
+                </span>
+              );
+            })()}
             <button
               data-testid="fullscreen-toggle"
               onClick={enterFullscreen}

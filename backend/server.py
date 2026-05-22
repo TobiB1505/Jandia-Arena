@@ -9,6 +9,8 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime, timedelta, timezone
 
+import football_api
+
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -262,43 +264,101 @@ def _is_tomorrow(iso: str) -> bool:
     return d.date() == (n + timedelta(days=1)).date()
 
 
+# Tracks last-known data source so /api/source reports accurately
+_state = {"matches_source": "demo", "groups_source": "demo"}
+
+
+async def _resolve_matches() -> tuple[List[Match], str]:
+    """Try API-Football for today + tomorrow. Fall back to demo if empty/unavailable."""
+    if football_api.is_api_configured():
+        n = _now()
+        today = n.strftime("%Y-%m-%d")
+        tomorrow = (n + timedelta(days=1)).strftime("%Y-%m-%d")
+        today_data = await football_api.fetch_fixtures(today)
+        tomorrow_data = await football_api.fetch_fixtures(tomorrow)
+        combined = []
+        if today_data:
+            combined.extend(today_data)
+        if tomorrow_data:
+            combined.extend(tomorrow_data)
+        if combined:
+            matches = [Match(**m) for m in combined]
+            return matches, "api"
+    return _build_matches(), "demo"
+
+
+async def _resolve_groups() -> tuple[List[Group], str]:
+    if football_api.is_api_configured():
+        data = await football_api.fetch_standings()
+        if data:
+            groups = []
+            for g in data:
+                standings = [TeamStanding(**s) for s in g["standings"]]
+                groups.append(Group(name=g["name"], standings=standings))
+            if groups:
+                return groups, "api"
+    return _build_groups(), "demo"
+
+
+@api_router.get("/source")
+async def get_source():
+    """Reports which data source is currently powering the dashboard."""
+    return {
+        "matches": _state["matches_source"],
+        "groups": _state["groups_source"],
+        "api_configured": football_api.is_api_configured(),
+    }
+
+
 @api_router.get("/matches", response_model=List[Match])
 async def get_matches():
-    """Return today's matches with computed statuses."""
-    return [m for m in _build_matches() if _is_today(m.kickoff)]
+    matches, src = await _resolve_matches()
+    _state["matches_source"] = src
+    return [m for m in matches if _is_today(m.kickoff)]
 
 
 @api_router.get("/matches/all", response_model=List[Match])
 async def get_all_matches():
-    """Return the full demo schedule (today + tomorrow)."""
-    return _build_matches()
+    matches, src = await _resolve_matches()
+    _state["matches_source"] = src
+    return matches
 
 
 @api_router.get("/matches/live", response_model=List[Match])
 async def get_live_matches():
-    return [m for m in _build_matches() if m.status in ("live", "halftime")]
+    matches, src = await _resolve_matches()
+    _state["matches_source"] = src
+    return [m for m in matches if m.status in ("live", "halftime")]
 
 
 @api_router.get("/matches/next", response_model=Optional[Match])
 async def get_next_match():
-    upcoming = [m for m in _build_matches() if m.status == "scheduled"]
+    matches, src = await _resolve_matches()
+    _state["matches_source"] = src
+    upcoming = [m for m in matches if m.status == "scheduled"]
     upcoming.sort(key=lambda m: m.kickoff)
     return upcoming[0] if upcoming else None
 
 
 @api_router.get("/matches/tomorrow", response_model=List[Match])
 async def get_tomorrow_matches():
-    return [m for m in _build_matches() if _is_tomorrow(m.kickoff)]
+    matches, src = await _resolve_matches()
+    _state["matches_source"] = src
+    return [m for m in matches if _is_tomorrow(m.kickoff)]
 
 
 @api_router.get("/matches/finished", response_model=List[Match])
 async def get_finished_matches():
-    return [m for m in _build_matches() if m.status == "finished"]
+    matches, src = await _resolve_matches()
+    _state["matches_source"] = src
+    return [m for m in matches if m.status == "finished"]
 
 
 @api_router.get("/groups", response_model=List[Group])
 async def get_groups():
-    return _build_groups()
+    groups, src = await _resolve_groups()
+    _state["groups_source"] = src
+    return groups
 
 
 app.include_router(api_router)
