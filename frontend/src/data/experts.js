@@ -10,7 +10,8 @@ export const EXPERTS = [
     name: "Patrick Schmidt",
     period: { from: "09.06.", to: "20.06.2026" },
     role: "Ehemaliger DFB-Juniorennationalspieler · Stürmer",
-    imageUrl: null,
+    imageUrl:
+      "https://customer-assets.emergentagent.com/job_de479bdb-7280-45ae-b625-da94099aba40/artifacts/16atujkc_Patrick%20Schmidt.jpg",
   },
   {
     id: "friedhelm-funkel",
@@ -25,14 +26,20 @@ export const EXPERTS = [
     name: "Michael Reschke",
     period: { from: "25.06.", to: "06.07.2026" },
     role: "Ex-Sportdirektor Bayern, Leverkusen & VfB Stuttgart",
-    imageUrl: null,
+    imageUrl:
+      "https://customer-assets.emergentagent.com/job_de479bdb-7280-45ae-b625-da94099aba40/artifacts/v9ox199u_Michael_reschke.jpg",
+    // Original photo is a tight close-up – push the crop down so the full
+    // face stays inside the card.
+    imagePosition: "center 35%",
   },
   {
     id: "stefan-schnoor",
     name: "Stefan Schnoor",
     period: { from: "25.06.", to: "09.07.2026" },
     role: "277 Bundesliga-Spiele · 15 Tore · Premier-League-Erfahrung",
-    imageUrl: null,
+    imageUrl:
+      "https://customer-assets.emergentagent.com/job_de479bdb-7280-45ae-b625-da94099aba40/artifacts/ss8xehak_Stefan%20Schnoor.webp",
+    imagePosition: "center 35%",
   },
   {
     id: "daniela-fuss",
@@ -59,7 +66,10 @@ export const EXPERTS = [
     name: "Kevin Großkreutz",
     period: { from: "22.06.", to: "29.06.2026" },
     role: "Weltmeister 2014 · 2× Deutscher Meister · DFB-Pokalsieger",
-    imageUrl: null,
+    imageUrl:
+      "https://customer-assets.emergentagent.com/job_de479bdb-7280-45ae-b625-da94099aba40/artifacts/l8phd0b7_Kevin%20Grosskreutz.jpg",
+    // Getty watermark sits in the right half – bias to the face on the left.
+    imagePosition: "left center",
   },
   {
     id: "jan-stecker",
