@@ -4,13 +4,10 @@ export const ScreenFrame = ({ title, subtitle, children, testId }) => {
   return (
     <motion.section
       data-testid={testId}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1, transition: { duration: 0.3, ease: "easeOut" } }}
-      // Exit almost-cut so the gap before the next slide mounts is minimal.
-      // With AnimatePresence mode="wait" only one slide is in DOM at a time,
-      // which avoids the layout-thrash hang on Schedule (7× ResizeObserver)
-      // and ExpertsScreen (inner AnimatePresence). Total perceived gap: ~0.1s.
-      exit={{ opacity: 0, transition: { duration: 0.1, ease: "easeIn" } }}
+      initial={{ opacity: 0, x: 80 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -80 }}
+      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
       className="relative flex h-full w-full flex-col px-12 pb-12 pt-4"
     >
       <div className="flex items-end justify-between border-b border-blue-400/20 pb-6">

@@ -103,7 +103,7 @@ export const Header = ({
           >
             {dateStr}
           </div>
-          <div className="mt-0.5">
+          <div className="mt-0.5 min-w-[340px]">
             <LastUpdated timestamp={lastUpdatedAt} />
           </div>
         </div>
