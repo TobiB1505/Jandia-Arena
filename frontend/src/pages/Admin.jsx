@@ -434,9 +434,13 @@ function ItemDialog({ open, initial, meta, saving, onClose, onSubmit }) {
               >
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="border-blue-400/30 bg-[#0c1430] text-blue-50">
                 {slots.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
+                  <SelectItem
+                    key={s.id}
+                    value={s.id}
+                    className="text-blue-100 focus:bg-blue-500/20 focus:text-white"
+                  >
                     {s.label}
                   </SelectItem>
                 ))}
@@ -460,9 +464,13 @@ function ItemDialog({ open, initial, meta, saving, onClose, onSubmit }) {
               >
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="border-blue-400/30 bg-[#0c1430] text-blue-50">
                 {variants.map((v) => (
-                  <SelectItem key={v.id} value={v.id}>
+                  <SelectItem
+                    key={v.id}
+                    value={v.id}
+                    className="text-blue-100 focus:bg-blue-500/20 focus:text-white"
+                  >
                     {v.label}
                   </SelectItem>
                 ))}
