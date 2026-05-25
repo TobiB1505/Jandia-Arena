@@ -31,7 +31,7 @@ const REFRESH_MS = 60000;
 const SCREEN_DURATION_MS = {
   today: 15000,
   next: 15000,
-  germany: 18000,
+  germany: 23000,
   tomorrow: 15000,
   schedule: 30000,
   groups: 35000,
