@@ -237,7 +237,7 @@ export default function Dashboard() {
           isFullscreen={isFullscreen}
           lastUpdatedAt={lastUpdatedAt}
           referenceDate={referenceDate}
-          lowerThirds={ltSuppressed ? [] : lowerThirds}
+          lowerThirds={lowerThirds}
           ltCycleMs={ltCycleMs}
           currentScreen={current}
         />
