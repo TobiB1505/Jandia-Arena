@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { AnimatePresence } from "framer-motion";
 import Header from "../components/Header";
+import BroadcastStage from "../components/BroadcastStage";
 import TodaysMatches from "../screens/TodaysMatches";
 import NextMatch from "../screens/NextMatch";
 import TomorrowsMatches from "../screens/TomorrowsMatches";
@@ -135,28 +136,28 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allMatches, referenceDate]);
 
+  const stageRef = useRef(null);
+
   const enterFullscreen = useCallback(() => {
-    const el = document.documentElement;
-    if (!document.fullscreenElement && el.requestFullscreen) {
-      el.requestFullscreen().catch(() => {});
-    } else if (document.exitFullscreen) {
-      document.exitFullscreen().catch(() => {});
-    }
+    stageRef.current?.enterFullscreen();
   }, []);
 
   const current = SCREENS[screenIdx];
 
   return (
-    <div
-      data-testid="ja-dashboard"
-      className="relative h-screen w-screen overflow-hidden bg-[#0A1128] text-white"
-      style={{
-        backgroundImage: `linear-gradient(rgba(10,17,40,0.86), rgba(10,17,40,0.94)), url(${BG_URL})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      <div className="broadcast-overlay relative flex h-full w-full flex-col">
+    <BroadcastStage ref={stageRef}>
+      <div
+        data-testid="ja-dashboard"
+        className="relative overflow-hidden bg-[#0A1128] text-white"
+        style={{
+          width: 1920,
+          height: 1080,
+          backgroundImage: `linear-gradient(rgba(10,17,40,0.86), rgba(10,17,40,0.94)), url(${BG_URL})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <div className="broadcast-overlay relative flex h-full w-full flex-col">
         <Header
           refreshKey={screenIdx}
           slideDurationMs={SCREEN_DURATION_MS[SCREENS[screenIdx]] || 15000}
@@ -212,5 +213,6 @@ export default function Dashboard() {
         </footer>
       </div>
     </div>
+    </BroadcastStage>
   );
 }
