@@ -33,7 +33,7 @@ const SCREEN_DURATION_MS = {
   tomorrow: 15000,
   schedule: 30000,
   groups: 35000,
-  experts: 27000,
+  experts: 45000,
 };
 
 const BG_URL =

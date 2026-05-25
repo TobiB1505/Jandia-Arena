@@ -4,7 +4,7 @@ import ScreenFrame from "../components/ScreenFrame";
 import { EXPERTS, initialsOf, isExpertCurrentlyHere } from "../data/experts";
 
 const PER_PAGE = 3;
-const PAGE_DURATION_MS = 9000;
+const PAGE_DURATION_MS = 15000;
 
 const AccentTints = [
   { ring: "ring-[#3B82F6]/40", glow: "shadow-[0_0_60px_rgba(59,130,246,0.18)]", chip: "from-[#0E47BA]/80 to-[#3B82F6]/60" },
