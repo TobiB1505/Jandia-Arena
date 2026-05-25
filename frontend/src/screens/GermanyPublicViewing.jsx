@@ -1,7 +1,10 @@
+import { useEffect, useState } from "react";
 import ScreenFrame from "../components/ScreenFrame";
 import Flag from "../components/Flag";
 import StatusBadge from "../components/StatusBadge";
 import { germanySide } from "../lib/germany";
+import { isExpertCurrentlyHere, initialsOf } from "../data/experts";
+import { fetchExperts, adaptExpert } from "../lib/api";
 
 const TeamBlock = ({ team, accent = false, testId }) => (
   <div className="flex flex-col items-center gap-6" data-testid={testId}>
@@ -27,8 +30,34 @@ const TeamBlock = ({ team, accent = false, testId }) => (
   </div>
 );
 
-export const GermanyPublicViewing = ({ match }) => {
+export const GermanyPublicViewing = ({ match, referenceDate = null }) => {
+  // Pull the live experts list and pick the ones currently on-site so the
+  // panel updates automatically without code changes.
+  const [experts, setExperts] = useState([]);
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const data = await fetchExperts();
+        if (alive && Array.isArray(data)) {
+          setExperts(data.map(adaptExpert));
+        }
+      } catch (_) { /* silent – panel just stays hidden */ }
+    };
+    load();
+    const t = setInterval(load, 60_000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, []);
+
   if (!match) return null;
+
+  const today = referenceDate
+    ? new Date(`${referenceDate}T12:00:00`)
+    : new Date();
+  const studioExperts = experts.filter((e) => isExpertCurrentlyHere(e, today));
 
   const side = germanySide(match);
   const kickoffStr = new Date(match.kickoff).toLocaleTimeString("de-DE", {
@@ -115,6 +144,68 @@ export const GermanyPublicViewing = ({ match }) => {
             testId="germany-away"
           />
         </div>
+
+        {/* "Heute im Studio" – auto-filtered from the experts data */}
+        {studioExperts.length > 0 ? (
+          <div className="mt-8" data-testid="germany-studio-today">
+            <div className="mb-3 flex items-center gap-3">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-75" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-300" />
+              </span>
+              <span className="font-display text-2xl uppercase tracking-[0.35em] text-emerald-200">
+                Heute im Studio
+              </span>
+              <span className="h-px flex-1 bg-gradient-to-r from-emerald-400/40 via-emerald-400/15 to-transparent" />
+            </div>
+            <div className="grid grid-flow-col auto-cols-fr gap-4">
+              {studioExperts.slice(0, 4).map((expert) => (
+                <div
+                  key={expert.id}
+                  data-testid={`germany-studio-expert-${expert.id}`}
+                  className="flex items-center gap-4 rounded-sm border border-emerald-400/25 bg-[#0a112a]/80 px-4 py-3"
+                >
+                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border border-emerald-300/40 bg-[#142566]">
+                    {expert.imageUrl ? (
+                      <img
+                        src={expert.imageUrl}
+                        alt=""
+                        className={`h-full w-full ${
+                          expert.imageFit === "contain"
+                            ? "object-contain"
+                            : "object-cover"
+                        }`}
+                        style={{
+                          objectPosition: expert.imagePosition || "center top",
+                        }}
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-base font-bold tracking-wide text-emerald-100">
+                        {initialsOf(expert.name)}
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <div
+                      className="truncate font-display text-xl uppercase tracking-wide text-white"
+                      data-testid={`germany-studio-name-${expert.id}`}
+                    >
+                      {expert.name}
+                    </div>
+                    <div className="truncate text-sm text-blue-200">
+                      {expert.role}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {studioExperts.length > 4 ? (
+              <div className="mt-2 text-right text-xs uppercase tracking-[0.3em] text-emerald-300/80">
+                + {studioExperts.length - 4} weitere Experten heute vor Ort
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
         {/* Promo / CTA block */}
         <div className="mt-auto pt-10">

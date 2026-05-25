@@ -249,7 +249,7 @@ export default function Dashboard() {
             )}
             {current === "next" && <NextMatch key="next" match={nextMatch} referenceDate={referenceDate} />}
             {current === "germany" && germanyMatch && (
-              <GermanyPublicViewing key="germany" match={germanyMatch} />
+              <GermanyPublicViewing key="germany" match={germanyMatch} referenceDate={referenceDate} />
             )}
             {current === "tomorrow" && (
               <TomorrowsMatches key="tomorrow" matches={tomorrowMatches} referenceDate={referenceDate} />
