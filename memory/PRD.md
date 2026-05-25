@@ -60,13 +60,25 @@ Create a 16:9 TV dashboard web app for "JANDIA ARENA". The app will be displayed
 - [x] Group Tables Screen handhabt 12 WM-2026-Gruppen (4×3 Compact-Layout) – Echtdaten von Football-Data.org
 - [x] Match-Screens fallen automatisch auf Demo-Daten zurück solange WM 2026 noch nicht gestartet hat
 
+## Iteration 5 (2026-05-25) – Lower Thirds + Admin
+- [x] **StudioLowerThird** wiederverwendbare Komponente (label, title, subtitle, variant, visible, position)
+- [x] 5 Varianten: live (pulsing red dot), studio, preview, halftime, analysis
+- [x] Reine CSS-Animationen (slide-in/-out, shine, pulse), `prefers-reduced-motion` Fallback
+- [x] **Deutschland Public Viewing Screen** (Auto-Rotation nur wenn heute Deutschland-Spiel)
+- [x] Utility `getTodayGermanyMatch` (erkennt Deutschland/Germany/GER/DE, Priorität Live > Upcoming > Finished)
+- [x] **Admin-Bereich** unter `/admin` (kein Schutz, geheime URL)
+- [x] Admin CRUD für Lower Thirds (Label, Title, Subtitle, Variant, Aktiv, Reihenfolge, Screens-Multiselect)
+- [x] Globale Cycle-Dauer einstellbar (≥3s)
+- [x] **Auto-Cycle** pro Screen: zeigt nacheinander alle aktiven Lower Thirds, die für den aktuellen Screen markiert sind
+- [x] MongoDB-Persistenz (`lower_thirds`, `lower_thirds_settings`), Seed beim ersten Start (3 Defaults)
+- [x] Backend Endpoints: GET/POST/PUT/DELETE `/api/lower-thirds`, GET/PUT `/api/lower-thirds/settings`, GET `/api/lower-thirds/meta`
+- [x] 11/11 Backend-Pytests grün, Frontend E2E (CRUD + Cycle) verifiziert
+
 ## Backlog (P1)
-- Real football API integration toggle (env-driven), e.g. API-Football
-- Group standings screen
-- Top scorers / yellow-red cards highlight
-- Sound-free goal animation overlay when score changes
+- Tor-Animations-Overlay (4s "GOOOAL!" wenn Live-Score sich ändert)
+- Bundesliga-Übergangsmodus (BL1-API bis WM-Start)
 
 ## Backlog (P2)
-- Multi-day schedule navigation
+- Sponsor/Hotel-Promo-Banner (3s zwischen Rotationen)
 - Stadium-specific theming
-- Sponsor banner slot
+- Multi-day schedule navigation

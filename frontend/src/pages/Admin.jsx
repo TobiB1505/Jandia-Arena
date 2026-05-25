@@ -22,6 +22,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -291,6 +292,9 @@ export default function Admin() {
         <DialogContent className="border-blue-400/20 bg-[#0c1430] text-blue-50">
           <DialogHeader>
             <DialogTitle>Wirklich löschen?</DialogTitle>
+            <DialogDescription className="text-blue-300">
+              Diese Aktion kann nicht rückgängig gemacht werden.
+            </DialogDescription>
           </DialogHeader>
           <p className="text-blue-200">
             „{confirmDelete?.title}" wird dauerhaft entfernt.
@@ -410,6 +414,9 @@ function ItemDialog({ open, initial, meta, saving, onClose, onSubmit }) {
           <DialogTitle>
             {form.id ? "Lower Third bearbeiten" : "Neuer Lower Third"}
           </DialogTitle>
+          <DialogDescription className="text-blue-300">
+            Konfiguriere Inhalt, Variante und auf welchen Screens dieser Lower Third erscheinen soll.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
