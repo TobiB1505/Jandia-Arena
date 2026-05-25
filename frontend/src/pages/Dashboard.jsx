@@ -191,15 +191,27 @@ export default function Dashboard() {
   );
 
   // Insert the Deutschland-Public-Viewing screen into the rotation only when
-  // a real Germany match exists today. Placed after "next" so it sits next to
-  // the other match-spotlight screens.
+  // a real Germany match exists today. When the *next* match also happens to
+  // be that Germany match, drop the generic "Nächstes Spiel" screen so the
+  // dashboard doesn't show the same fixture twice in a row. As soon as the
+  // Germany match is over and the next upcoming match is a non-Germany one,
+  // the "next" slider automatically returns.
+  const nextIsGermanyToday =
+    !!germanyMatch && !!nextMatch && nextMatch.id === germanyMatch.id;
+
   const SCREENS = useMemo(() => {
-    if (!germanyMatch) return BASE_SCREENS;
-    const out = [...BASE_SCREENS];
-    const insertAfter = out.indexOf("next");
-    out.splice(insertAfter + 1, 0, "germany");
-    return out;
-  }, [germanyMatch]);
+    const base = nextIsGermanyToday
+      ? BASE_SCREENS.filter((s) => s !== "next")
+      : [...BASE_SCREENS];
+    if (!germanyMatch) return base;
+    // Place "germany" where "next" would have been so the rotation still
+    // shows the upcoming match where viewers expect it.
+    const idx = nextIsGermanyToday
+      ? base.indexOf("today")
+      : base.indexOf("next");
+    base.splice(idx + 1, 0, "germany");
+    return base;
+  }, [germanyMatch, nextIsGermanyToday]);
 
   // Keep screenIdx in range when the screen list shrinks/grows.
   useEffect(() => {
