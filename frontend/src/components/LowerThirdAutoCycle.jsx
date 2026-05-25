@@ -42,11 +42,14 @@ export default function LowerThirdAutoCycle({
   // cycle never actually reaches its dwell time and looks frozen.
   const eligibleKey = eligible.map((i) => i.id).join("|");
 
-  // Reset cycle when the screen changes or eligible list shape changes
+  // Only reset when the actual eligible set changes – NOT on every
+  // screen rotation. Otherwise a stage LT shared across multiple screens
+  // would visually jump back to item 0 every time the dashboard rotates.
   useEffect(() => {
     setIdx(0);
     setVisible(eligible.length > 0);
-  }, [currentScreen, eligibleKey, eligible.length]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eligibleKey]);
 
   useEffect(() => {
     if (eligible.length === 0) return;
