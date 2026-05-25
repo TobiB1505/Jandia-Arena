@@ -64,6 +64,11 @@ export default function Dashboard() {
   const [groups, setGroups] = useState(FALLBACK_GROUPS);
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [referenceDate, setReferenceDate] = useState(null);
+  // Anchor for the simulated/server clock. We capture the server's ISO at the
+  // moment we fetched it together with the local Date.now(), and derive
+  // `simulatedNow` from that delta so per-second checks (e.g. nextMatch) stay
+  // accurate between 60s polls.
+  const [serverClock, setServerClock] = useState({ iso: null, fetchedAt: 0 });
   const [screenIdx, setScreenIdx] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -102,6 +107,9 @@ export default function Dashboard() {
         setGroups(FALLBACK_GROUPS);
       }
       if (now?.date) setReferenceDate(now.date);
+      if (now?.iso) {
+        setServerClock({ iso: now.iso, fetchedAt: Date.now() });
+      }
       if (Array.isArray(lts)) setLowerThirds(lts);
       if (ltSettings?.cycle_duration_ms) setLtCycleMs(ltSettings.cycle_duration_ms);
     } catch (e) {
@@ -151,6 +159,12 @@ export default function Dashboard() {
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
 
+  // Effective "now" for time-of-day comparisons. Falls back to the real
+  // browser clock when no server anchor is available.
+  const nowMs = serverClock.iso
+    ? new Date(serverClock.iso).getTime() + (Date.now() - serverClock.fetchedAt)
+    : Date.now();
+
   const todayMatches = useMemo(
     () => allMatches.filter((m) => isSameDay(new Date(m.kickoff), today)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -162,14 +176,13 @@ export default function Dashboard() {
     [allMatches, referenceDate]
   );
   const nextMatch = useMemo(() => {
-    const ref = today.getTime();
     const upcoming = allMatches.filter(
-      (m) => m.status === "scheduled" && new Date(m.kickoff).getTime() >= ref
+      (m) => m.status === "scheduled" && new Date(m.kickoff).getTime() >= nowMs
     );
     upcoming.sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
     return upcoming[0] || null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allMatches, referenceDate]);
+  }, [allMatches, referenceDate, serverClock]);
 
   // Today-only Germany match (live > upcoming > finished). null if no match today.
   const germanyMatch = useMemo(
