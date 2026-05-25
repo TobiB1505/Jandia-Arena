@@ -214,9 +214,16 @@ export default function Dashboard() {
   }, [germanyMatch, germanyFinished, nextIsGermanyToday]);
 
   // Keep screenIdx in range when the screen list shrinks/grows.
+  // Stable string key – avoids spurious resets whenever the parent re-renders
+  // and the SCREENS useMemo gets a fresh (but identical) array reference
+  // (which happens on every 30s data poll because germanyMatch is a fresh
+  // object). Same trick we use for the Lower-Thirds cycle.
+  const screensKey = SCREENS.join("|");
+
   useEffect(() => {
     setScreenIdx((i) => (i >= SCREENS.length ? 0 : i));
-  }, [SCREENS]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screensKey]);
 
   // Data polling – switches to a faster cadence while the Germany match is
   // live so scores / minutes refresh roughly every 15s.
@@ -240,7 +247,7 @@ export default function Dashboard() {
     );
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [screenIdx, pinnedScreen, germanyLive, SCREENS]);
+  }, [screenIdx, pinnedScreen, germanyLive, screensKey]);
 
   // Force-pin to the Germany slide whenever the match goes live (or stays
   // live across polls). Snaps even if the rotation was mid-slide.
@@ -248,7 +255,8 @@ export default function Dashboard() {
     if (!germanyLive) return;
     const idx = SCREENS.indexOf("germany");
     if (idx >= 0) setScreenIdx(idx);
-  }, [germanyLive, SCREENS]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [germanyLive, screensKey]);
 
   const stageRef = useRef(null);
 
