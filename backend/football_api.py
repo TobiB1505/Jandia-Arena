@@ -13,8 +13,9 @@ import httpx
 logger = logging.getLogger(__name__)
 
 API_BASE = "https://api.football-data.org/v4"
-CACHE_TTL_FIXTURES = 180     # 3 min – fixtures + live scores
-CACHE_TTL_STANDINGS = 300    # 5 min – standings update faster
+CACHE_TTL_FIXTURES = 180        # 3 min – fixtures + live scores
+CACHE_TTL_FIXTURES_LIVE = 20    # 20 s – shorter window when there's a live match
+CACHE_TTL_STANDINGS = 300       # 5 min – standings update faster
 
 
 # Team / Country → ISO flag code + German display name.
@@ -141,21 +142,37 @@ def _team_meta(team: dict) -> Tuple[str, str, str]:
 
 
 # ---------- Cache ----------
+# Each entry: (timestamp, value, has_live_match).
+# `has_live_match` lets the reader pick a shorter TTL while live games are
+# in progress, so the dashboard polls fresh scores far more often without
+# us having to manually invalidate the cache.
 _cache: dict = {}
 
 
-def _cache_get(key: str, ttl: int):
+def _matches_have_live(value: Any) -> bool:
+    """Heuristic: scan a fixtures payload for at least one in-play match."""
+    if not isinstance(value, list):
+        return False
+    live_statuses = {"live", "in_play", "halftime", "paused"}
+    for m in value:
+        if isinstance(m, dict) and m.get("status") in live_statuses:
+            return True
+    return False
+
+
+def _cache_get(key: str, ttl: int, live_ttl: int | None = None):
     entry = _cache.get(key)
     if not entry:
         return None
-    ts, value = entry
-    if time.time() - ts > ttl:
+    ts, value, has_live = entry
+    effective_ttl = live_ttl if (has_live and live_ttl is not None) else ttl
+    if time.time() - ts > effective_ttl:
         return None
     return value
 
 
 def _cache_set(key: str, value: Any):
-    _cache[key] = (time.time(), value)
+    _cache[key] = (time.time(), value, _matches_have_live(value))
 
 
 def cache_clear():
@@ -234,7 +251,7 @@ def _format_stage(stage: Optional[str], group: Optional[str]) -> str:
 async def fetch_all_matches() -> Optional[list]:
     """Fetch the full competition schedule (all matches across all dates)."""
     cache_key = "all_matches"
-    cached = _cache_get(cache_key, CACHE_TTL_FIXTURES)
+    cached = _cache_get(cache_key, CACHE_TTL_FIXTURES, CACHE_TTL_FIXTURES_LIVE)
     if cached is not None:
         return cached
 
@@ -276,7 +293,7 @@ async def fetch_all_matches() -> Optional[list]:
 async def fetch_fixtures(date_str: str) -> Optional[list]:
     """Fetch fixtures for a given date (YYYY-MM-DD)."""
     cache_key = f"fixtures:{date_str}"
-    cached = _cache_get(cache_key, CACHE_TTL_FIXTURES)
+    cached = _cache_get(cache_key, CACHE_TTL_FIXTURES, CACHE_TTL_FIXTURES_LIVE)
     if cached is not None:
         return cached
 

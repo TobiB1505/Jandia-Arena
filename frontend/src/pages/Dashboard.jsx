@@ -25,6 +25,11 @@ import { getTodayGermanyMatch } from "../lib/germany";
 import LowerThirdAutoCycle from "../components/LowerThirdAutoCycle";
 
 const REFRESH_MS = 60000;
+// When a Germany match is in progress we poll significantly more often so
+// the score / minute on the Public-Viewing slide is always fresh.
+const REFRESH_MS_LIVE = 15000;
+
+const LIVE_STATUSES = new Set(["live", "in_play", "halftime", "paused"]);
 
 // Per-screen display duration. Group Tables stays longer because of the
 // dense information density. Schedule = single 7-day week view, normal dwell.
@@ -131,23 +136,6 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    load();
-    const t = setInterval(load, REFRESH_MS);
-    return () => clearInterval(t);
-  }, [load]);
-
-  useEffect(() => {
-    if (pinnedScreen) return; // editor preview: don't auto-rotate
-    const duration = SCREEN_DURATION_MS[SCREENS[screenIdx]] || 15000;
-    const t = setTimeout(
-      () => setScreenIdx((i) => (i + 1) % SCREENS.length),
-      duration
-    );
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [screenIdx, pinnedScreen]);
-
-  useEffect(() => {
     const onChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener("fullscreenchange", onChange);
     return () => document.removeEventListener("fullscreenchange", onChange);
@@ -195,12 +183,18 @@ export default function Dashboard() {
     [allMatches, referenceDate]
   );
 
+  // Live-lock: while the Germany match is in play we pin the dashboard to the
+  // Deutschland-Public-Viewing slide so the bar audience never misses a goal,
+  // and we kick the data poll into a faster cadence (see REFRESH_MS_LIVE).
+  const germanyLive = !!germanyMatch && LIVE_STATUSES.has(germanyMatch.status);
+  const germanyFinished = !!germanyMatch && germanyMatch.status === "finished";
+
   // Insert the Deutschland-Public-Viewing screen into the rotation only when
-  // a real Germany match exists today. When the *next* match also happens to
+  // a real Germany match exists today AND it has not finished yet. Once the
+  // API reports the match as "finished" the slide disappears and the normal
+  // rotation resumes automatically. When the *next* match also happens to
   // be that Germany match, drop the generic "Nächstes Spiel" screen so the
-  // dashboard doesn't show the same fixture twice in a row. As soon as the
-  // Germany match is over and the next upcoming match is a non-Germany one,
-  // the "next" slider automatically returns.
+  // dashboard doesn't show the same fixture twice in a row.
   const nextIsGermanyToday =
     !!germanyMatch && !!nextMatch && nextMatch.id === germanyMatch.id;
 
@@ -208,7 +202,7 @@ export default function Dashboard() {
     const base = nextIsGermanyToday
       ? BASE_SCREENS.filter((s) => s !== "next")
       : [...BASE_SCREENS];
-    if (!germanyMatch) return base;
+    if (!germanyMatch || germanyFinished) return base;
     // Place "germany" where "next" would have been so the rotation still
     // shows the upcoming match where viewers expect it.
     const idx = nextIsGermanyToday
@@ -216,12 +210,44 @@ export default function Dashboard() {
       : base.indexOf("next");
     base.splice(idx + 1, 0, "germany");
     return base;
-  }, [germanyMatch, nextIsGermanyToday]);
+  }, [germanyMatch, germanyFinished, nextIsGermanyToday]);
 
   // Keep screenIdx in range when the screen list shrinks/grows.
   useEffect(() => {
     setScreenIdx((i) => (i >= SCREENS.length ? 0 : i));
   }, [SCREENS]);
+
+  // Data polling – switches to a faster cadence while the Germany match is
+  // live so scores / minutes refresh roughly every 15s.
+  useEffect(() => {
+    load();
+    const refreshMs = germanyLive ? REFRESH_MS_LIVE : REFRESH_MS;
+    const t = setInterval(load, refreshMs);
+    return () => clearInterval(t);
+  }, [load, germanyLive]);
+
+  // Screen rotation timer. Disabled while the Germany match is live – the
+  // dashboard stays pinned on the Public-Viewing slide until the API flips
+  // the match status to "finished" (handled by SCREENS recomputing).
+  useEffect(() => {
+    if (pinnedScreen) return; // editor preview: don't auto-rotate
+    if (germanyLive) return;
+    const duration = SCREEN_DURATION_MS[SCREENS[screenIdx]] || 15000;
+    const t = setTimeout(
+      () => setScreenIdx((i) => (i + 1) % SCREENS.length),
+      duration
+    );
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screenIdx, pinnedScreen, germanyLive, SCREENS]);
+
+  // Force-pin to the Germany slide whenever the match goes live (or stays
+  // live across polls). Snaps even if the rotation was mid-slide.
+  useEffect(() => {
+    if (!germanyLive) return;
+    const idx = SCREENS.indexOf("germany");
+    if (idx >= 0) setScreenIdx(idx);
+  }, [germanyLive, SCREENS]);
 
   const stageRef = useRef(null);
 
