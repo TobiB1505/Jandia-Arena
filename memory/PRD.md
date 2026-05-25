@@ -87,6 +87,9 @@ Create a 16:9 TV dashboard web app for "JANDIA ARENA". The app will be displayed
 - [x] Backend Endpoints: GET/POST/PUT/DELETE `/api/lower-thirds`, GET/PUT `/api/lower-thirds/settings`, PATCH `/api/lower-thirds/{id}/position`, PATCH `/api/lower-thirds/{id}/active`, GET `/api/lower-thirds/meta`
 - [x] 11/11 Backend-Pytests grün, Drag-Drop + Persistence E2E verifiziert
 
+## Iteration 5 (2026-02-25) – Cycle-Timer Stabilisierung
+- [x] **Lower-Thirds Cycle-Bug behoben** (Stage + Header): stabiler `eligibleKey` String statt Array-Referenz in `useEffect`-Dependencies. Verhindert vorzeitigen Timer-Reset beim 60s-Datenpoll, Banner cyceln nun die volle eingestellte `cycle_duration_ms`.
+
 ## Backlog (P1)
 - Tor-Animations-Overlay (4s "GOOOAL!" wenn Live-Score sich ändert)
 - Bundesliga-Übergangsmodus (BL1-API bis WM-Start)
