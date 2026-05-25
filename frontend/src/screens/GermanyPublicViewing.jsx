@@ -221,9 +221,6 @@ export const GermanyPublicViewing = ({ match, referenceDate = null }) => {
                 <p className="font-display text-4xl uppercase leading-tight tracking-wide text-white">
                   Erlebe das Spiel gemeinsam mit uns auf der grossen Leinwand.
                 </p>
-                <p className="mt-3 text-2xl text-blue-200">
-                  Komm vorbei und sichere dir deinen Platz.
-                </p>
               </div>
 
               <div className="hidden h-20 w-px shrink-0 bg-blue-400/30 md:block" />
