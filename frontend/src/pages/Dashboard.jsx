@@ -287,7 +287,7 @@ export default function Dashboard() {
         />
 
         <main className="relative flex-1 min-h-0">
-          <AnimatePresence mode="wait">
+          <AnimatePresence initial={false}>
             {current === "today" && (
               <TodaysMatches key="today" matches={todayMatches} referenceDate={referenceDate} />
             )}

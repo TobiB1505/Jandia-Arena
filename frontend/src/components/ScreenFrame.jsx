@@ -4,11 +4,11 @@ export const ScreenFrame = ({ title, subtitle, children, testId }) => {
   return (
     <motion.section
       data-testid={testId}
-      initial={{ opacity: 0, x: 80 }}
+      initial={{ opacity: 0, x: 40 }}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -80 }}
-      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-      className="relative flex h-full w-full flex-col px-12 pb-12 pt-4"
+      exit={{ opacity: 0, x: -40 }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      className="absolute inset-0 flex flex-col px-12 pb-12 pt-4"
     >
       <div className="flex items-end justify-between border-b border-blue-400/20 pb-6">
         <div>
