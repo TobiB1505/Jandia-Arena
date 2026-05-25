@@ -13,9 +13,9 @@ import httpx
 logger = logging.getLogger(__name__)
 
 API_BASE = "https://api.football-data.org/v4"
-CACHE_TTL_FIXTURES = 180        # 3 min – fixtures + live scores
-CACHE_TTL_FIXTURES_LIVE = 20    # 20 s – shorter window when there's a live match
-CACHE_TTL_STANDINGS = 300       # 5 min – standings update faster
+CACHE_TTL_FIXTURES = 60         # 1 min – fixtures during normal mode
+CACHE_TTL_FIXTURES_LIVE = 15    # 15 s – tighter window while a match is live
+CACHE_TTL_STANDINGS = 180       # 3 min – standings change slowly
 
 # Football-Data.org free tier hard limit: 10 calls per minute.
 # We add a safety margin so concurrent endpoints can never trip it.

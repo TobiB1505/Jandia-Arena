@@ -25,10 +25,10 @@ import { getTodayGermanyMatch } from "../lib/germany";
 import LowerThirdAutoCycle from "../components/LowerThirdAutoCycle";
 import GoalOverlay from "../components/GoalOverlay";
 
-const REFRESH_MS = 60000;
+const REFRESH_MS = 30000;
 // When a Germany match is in progress we poll significantly more often so
 // the score / minute on the Public-Viewing slide is always fresh.
-const REFRESH_MS_LIVE = 15000;
+const REFRESH_MS_LIVE = 10000;
 
 const LIVE_STATUSES = new Set(["live", "in_play", "halftime", "paused"]);
 
