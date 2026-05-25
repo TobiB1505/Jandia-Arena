@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 
 import football_api
 import lower_thirds as lower_thirds_module
+import experts as experts_module
 
 
 ROOT_DIR = Path(__file__).parent
@@ -483,6 +484,8 @@ async def get_schedule():
 
 app.include_router(api_router)
 app.include_router(lower_thirds_module.router)
+app.include_router(experts_module.router)
+experts_module.mount_uploads_static(app)
 
 
 @app.on_event("startup")
@@ -491,6 +494,14 @@ async def _seed_lower_thirds():
         await lower_thirds_module.seed_defaults_if_empty()
     except Exception as e:
         logging.getLogger(__name__).warning("Lower Thirds seed failed: %s", e)
+
+
+@app.on_event("startup")
+async def _seed_experts():
+    try:
+        await experts_module.seed_defaults_if_empty()
+    except Exception as e:
+        logging.getLogger(__name__).warning("Experts seed failed: %s", e)
 
 app.add_middleware(
     CORSMiddleware,

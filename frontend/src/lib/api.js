@@ -77,6 +77,52 @@ export async function patchLowerThirdActive(id, active) {
   return res.data;
 }
 
+// ---- Experts ----
+export async function fetchExperts() {
+  const res = await axios.get(`${API}/experts`);
+  return res.data;
+}
+
+export async function updateExpert(id, payload) {
+  const res = await axios.put(`${API}/experts/${id}`, payload);
+  return res.data;
+}
+
+export async function uploadExpertImage(id, file, onProgress) {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await axios.post(`${API}/experts/${id}/image`, form, {
+    headers: { "Content-Type": "multipart/form-data" },
+    onUploadProgress: onProgress,
+  });
+  return res.data;
+}
+
+export async function clearExpertImage(id) {
+  const res = await axios.delete(`${API}/experts/${id}/image`);
+  return res.data;
+}
+
+/** Convert a backend expert (snake_case) to the shape ExpertsScreen expects. */
+export function adaptExpert(e) {
+  if (!e) return null;
+  const imageUrl = e.image_url
+    ? e.image_url.startsWith("http")
+      ? e.image_url
+      : `${BACKEND_URL}${e.image_url}`
+    : null;
+  return {
+    id: e.id,
+    name: e.name,
+    role: e.role,
+    period: { from: e.period_from, to: e.period_to },
+    imageUrl,
+    imageFit: e.image_fit || "cover",
+    imagePosition: e.image_position || null,
+    order: e.order || 0,
+  };
+}
+
 // In-memory demo fallback (used when backend is unreachable)
 const _mkIso = (offsetMin) =>
   new Date(Date.now() + offsetMin * 60 * 1000).toISOString();

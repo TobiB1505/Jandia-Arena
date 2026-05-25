@@ -28,6 +28,7 @@ import {
   DialogTitle,
 } from "../components/ui/dialog";
 import LowerThirdLiveEditor from "../components/LowerThirdLiveEditor";
+import ExpertsAdmin from "../components/ExpertsAdmin";
 import {
   fetchLowerThirds,
   fetchLowerThirdsSettings,
@@ -252,6 +253,9 @@ export default function Admin() {
             />
           </CardContent>
         </Card>
+
+        {/* Experts management */}
+        <ExpertsAdmin />
       </div>
 
       {/* Edit dialog */}
