@@ -1,6 +1,8 @@
 /**
  * Experts featured at the Jandia Arena.
  * Replace `imageUrl` with an official press photo URL when licensed.
+ * `imagePosition` can be used to bias the photo crop (e.g. when two people
+ * are on the same image and the relevant one is on the left).
  */
 export const EXPERTS = [
   {
@@ -15,7 +17,8 @@ export const EXPERTS = [
     name: "Friedhelm Funkel",
     period: { from: "10.06.", to: "26.06.2026" },
     role: "DFB-Pokalsieger 1985 · 320 Bundesliga-Spiele",
-    imageUrl: null,
+    imageUrl:
+      "https://customer-assets.emergentagent.com/job_de479bdb-7280-45ae-b625-da94099aba40/artifacts/tq8oo8li_Friedhelm%20Funkel.jpg",
   },
   {
     id: "michael-reschke",
@@ -32,18 +35,24 @@ export const EXPERTS = [
     imageUrl: null,
   },
   {
-    id: "daniela-ulbing",
-    name: "Daniela Ulbing",
+    id: "daniela-fuss",
+    name: "Daniela Fuß",
     period: { from: "24.06.", to: "09.07.2026" },
     role: "Sportmoderatorin · DSF/Sport1, RTL & ProSieben",
-    imageUrl: null,
+    imageUrl:
+      "https://customer-assets.emergentagent.com/job_de479bdb-7280-45ae-b625-da94099aba40/artifacts/tmcx5zxt_Daniela%20Fu%C3%9F.jpg",
+    // The press photo carries an IMAGO watermark in the right corner – shift
+    // the focus to the left so the face stays centered and the watermark is
+    // softened by the gradient overlay.
+    imagePosition: "left center",
   },
   {
     id: "hansi-kuepper",
     name: "Hansi Küpper",
     period: { from: "20.06.", to: "27.06.2026" },
     role: "Kommentatoren-Legende · Sky, Sat.1, Champions League",
-    imageUrl: null,
+    imageUrl:
+      "https://customer-assets.emergentagent.com/job_de479bdb-7280-45ae-b625-da94099aba40/artifacts/hlefm6j7_Hansi%20Kuepper.jpg",
   },
   {
     id: "kevin-grosskreutz",
@@ -57,14 +66,18 @@ export const EXPERTS = [
     name: "Jan Stecker",
     period: { from: "10.07.", to: "20.07.2026" },
     role: "RTL-/NFL-Moderator · Sportexperte & Kommentator",
-    imageUrl: null,
+    imageUrl:
+      "https://customer-assets.emergentagent.com/job_de479bdb-7280-45ae-b625-da94099aba40/artifacts/5fx8cukk_Jan%20Stecker.jpg",
+    // The photo shows two people – Jan Stecker is the one on the left.
+    imagePosition: "left center",
   },
   {
     id: "holger-fach",
     name: "Holger Fach",
     period: { from: "10.07.", to: "20.07.2026" },
     role: "Ex-Bundesligaprofi · 5 A-Länderspiele · DFB-Pokalsieger",
-    imageUrl: null,
+    imageUrl:
+      "https://customer-assets.emergentagent.com/job_de479bdb-7280-45ae-b625-da94099aba40/artifacts/nhgnhyy5_Holger%20Fach.jpg",
   },
 ];
 

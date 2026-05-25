@@ -35,6 +35,7 @@ const ExpertCard = ({ expert, accentIdx, index }) => {
             src={expert.imageUrl}
             alt={expert.name}
             className="h-full w-full object-cover"
+            style={{ objectPosition: expert.imagePosition || "center top" }}
           />
         ) : (
           <div className="relative flex h-full w-full items-center justify-center">
