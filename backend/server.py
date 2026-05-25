@@ -485,7 +485,6 @@ async def get_schedule():
 app.include_router(api_router)
 app.include_router(lower_thirds_module.router)
 app.include_router(experts_module.router)
-experts_module.mount_uploads_static(app)
 
 
 @app.on_event("startup")
@@ -502,6 +501,11 @@ async def _seed_experts():
         await experts_module.seed_defaults_if_empty()
     except Exception as e:
         logging.getLogger(__name__).warning("Experts seed failed: %s", e)
+
+
+@app.on_event("startup")
+async def _init_object_storage():
+    experts_module.init_storage_safe()
 
 app.add_middleware(
     CORSMiddleware,
