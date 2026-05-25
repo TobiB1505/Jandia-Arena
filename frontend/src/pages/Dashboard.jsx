@@ -7,6 +7,7 @@ import NextMatch from "../screens/NextMatch";
 import TomorrowsMatches from "../screens/TomorrowsMatches";
 import Schedule from "../screens/Schedule";
 import GroupTables from "../screens/GroupTables";
+import GermanyPublicViewing from "../screens/GermanyPublicViewing";
 import {
   fetchAllMatches,
   fetchSchedule,
@@ -15,6 +16,7 @@ import {
   FALLBACK_MATCHES,
   FALLBACK_GROUPS,
 } from "../lib/api";
+import { getTodayGermanyMatch } from "../lib/germany";
 
 const REFRESH_MS = 60000;
 
@@ -23,6 +25,7 @@ const REFRESH_MS = 60000;
 const SCREEN_DURATION_MS = {
   today: 15000,
   next: 15000,
+  germany: 18000,
   tomorrow: 15000,
   schedule: 30000,
   groups: 35000,
@@ -31,10 +34,11 @@ const SCREEN_DURATION_MS = {
 const BG_URL =
   "https://static.prod-images.emergentagent.com/jobs/350ac180-61fb-48e9-b8d9-50ec9465a89d/images/23f3eed9fb2fcfd8ab6a748b97925a709811830e9d7b64a20dc3c2c64c5edec7.png";
 
-const SCREENS = ["today", "next", "tomorrow", "schedule", "groups"];
+const BASE_SCREENS = ["today", "next", "tomorrow", "schedule", "groups"];
 const SCREEN_LABELS = {
   today: "Heute",
   next: "Nächstes",
+  germany: "Deutschland",
   tomorrow: "Morgen",
   schedule: "Spielplan",
   groups: "Gruppen",
@@ -136,6 +140,28 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allMatches, referenceDate]);
 
+  // Today-only Germany match (live > upcoming > finished). null if no match today.
+  const germanyMatch = useMemo(
+    () => getTodayGermanyMatch(allMatches, referenceDate),
+    [allMatches, referenceDate]
+  );
+
+  // Insert the Deutschland-Public-Viewing screen into the rotation only when
+  // a real Germany match exists today. Placed after "next" so it sits next to
+  // the other match-spotlight screens.
+  const SCREENS = useMemo(() => {
+    if (!germanyMatch) return BASE_SCREENS;
+    const out = [...BASE_SCREENS];
+    const insertAfter = out.indexOf("next");
+    out.splice(insertAfter + 1, 0, "germany");
+    return out;
+  }, [germanyMatch]);
+
+  // Keep screenIdx in range when the screen list shrinks/grows.
+  useEffect(() => {
+    setScreenIdx((i) => (i >= SCREENS.length ? 0 : i));
+  }, [SCREENS]);
+
   const stageRef = useRef(null);
 
   const enterFullscreen = useCallback(() => {
@@ -173,6 +199,9 @@ export default function Dashboard() {
               <TodaysMatches key="today" matches={todayMatches} referenceDate={referenceDate} />
             )}
             {current === "next" && <NextMatch key="next" match={nextMatch} referenceDate={referenceDate} />}
+            {current === "germany" && germanyMatch && (
+              <GermanyPublicViewing key="germany" match={germanyMatch} />
+            )}
             {current === "tomorrow" && (
               <TomorrowsMatches key="tomorrow" matches={tomorrowMatches} referenceDate={referenceDate} />
             )}
