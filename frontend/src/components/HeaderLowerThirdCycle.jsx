@@ -30,10 +30,15 @@ export default function HeaderLowerThirdCycle({
   const [idx, setIdx] = useState(0);
   const [visible, setVisible] = useState(true);
 
+  // Stable identity – avoids restarting the timer on every parent re-render
+  // (e.g. on screen rotation or 60s lowerThirds poll). Without this the
+  // cycle never actually reaches its dwell time and looks frozen.
+  const eligibleKey = eligible.map((i) => i.id).join("|");
+
   useEffect(() => {
     setIdx(0);
     setVisible(eligible.length > 0);
-  }, [currentScreen, eligible.length]);
+  }, [currentScreen, eligibleKey, eligible.length]);
 
   useEffect(() => {
     if (eligible.length === 0) return;
@@ -54,7 +59,8 @@ export default function HeaderLowerThirdCycle({
       clearTimeout(t);
       if (swap) clearTimeout(swap);
     };
-  }, [idx, eligible, cycleDurationMs]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idx, eligibleKey, cycleDurationMs]);
 
   if (eligible.length === 0) return null;
   const item = eligible[idx] || eligible[0];
