@@ -1,10 +1,8 @@
-import { useEffect, useState } from "react";
 import ScreenFrame from "../components/ScreenFrame";
 import Flag from "../components/Flag";
 import StatusBadge from "../components/StatusBadge";
 import { germanySide } from "../lib/germany";
 import { isExpertCurrentlyHere, initialsOf } from "../data/experts";
-import { fetchExperts, adaptExpert } from "../lib/api";
 
 const TeamBlock = ({ team, accent = false, testId }) => (
   <div className="flex flex-col items-center gap-6" data-testid={testId}>
@@ -30,28 +28,7 @@ const TeamBlock = ({ team, accent = false, testId }) => (
   </div>
 );
 
-export const GermanyPublicViewing = ({ match, referenceDate = null }) => {
-  // Pull the live experts list and pick the ones currently on-site so the
-  // panel updates automatically without code changes.
-  const [experts, setExperts] = useState([]);
-  useEffect(() => {
-    let alive = true;
-    const load = async () => {
-      try {
-        const data = await fetchExperts();
-        if (alive && Array.isArray(data)) {
-          setExperts(data.map(adaptExpert));
-        }
-      } catch (_) { /* silent – panel just stays hidden */ }
-    };
-    load();
-    const t = setInterval(load, 60_000);
-    return () => {
-      alive = false;
-      clearInterval(t);
-    };
-  }, []);
-
+export const GermanyPublicViewing = ({ match, referenceDate = null, experts = [] }) => {
   if (!match) return null;
 
   const today = referenceDate

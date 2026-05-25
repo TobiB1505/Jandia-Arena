@@ -16,6 +16,8 @@ import {
   fetchNow,
   fetchLowerThirds,
   fetchLowerThirdsSettings,
+  fetchExperts,
+  adaptExpert,
   FALLBACK_MATCHES,
   FALLBACK_GROUPS,
 } from "../lib/api";
@@ -74,6 +76,7 @@ export default function Dashboard() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [lowerThirds, setLowerThirds] = useState([]);
   const [ltCycleMs, setLtCycleMs] = useState(25000);
+  const [experts, setExperts] = useState([]);
 
   // Allow the admin preview iframe to embed the dashboard without the
   // lower-third overlay (so the editor can draw its own draggable overlay
@@ -87,13 +90,14 @@ export default function Dashboard() {
 
   const load = useCallback(async () => {
     try {
-      const [matches, sched, grps, now, lts, ltSettings] = await Promise.all([
+      const [matches, sched, grps, now, lts, ltSettings, exps] = await Promise.all([
         fetchAllMatches(),
         fetchSchedule().catch(() => []),
         fetchGroups(),
         fetchNow().catch(() => null),
         fetchLowerThirds().catch(() => []),
         fetchLowerThirdsSettings().catch(() => null),
+        fetchExperts().catch(() => []),
       ]);
       if (Array.isArray(matches) && matches.length > 0) {
         setAllMatches(matches);
@@ -112,6 +116,7 @@ export default function Dashboard() {
       }
       if (Array.isArray(lts)) setLowerThirds(lts);
       if (ltSettings?.cycle_duration_ms) setLtCycleMs(ltSettings.cycle_duration_ms);
+      if (Array.isArray(exps)) setExperts(exps.map(adaptExpert));
     } catch (e) {
       console.warn("Falling back to demo data:", e?.message);
       setAllMatches(FALLBACK_MATCHES);
@@ -261,7 +266,7 @@ export default function Dashboard() {
             )}
             {current === "next" && <NextMatch key="next" match={nextMatch} referenceDate={referenceDate} />}
             {current === "germany" && germanyMatch && (
-              <GermanyPublicViewing key="germany" match={germanyMatch} referenceDate={referenceDate} />
+              <GermanyPublicViewing key="germany" match={germanyMatch} referenceDate={referenceDate} experts={experts} />
             )}
             {current === "tomorrow" && (
               <TomorrowsMatches key="tomorrow" matches={tomorrowMatches} referenceDate={referenceDate} />

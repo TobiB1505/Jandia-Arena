@@ -2,11 +2,9 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ScreenFrame from "../components/ScreenFrame";
 import { EXPERTS as STATIC_EXPERTS, initialsOf, isExpertCurrentlyHere } from "../data/experts";
-import { fetchExperts, adaptExpert } from "../lib/api";
 
 const PER_PAGE = 3;
 const PAGE_DURATION_MS = 15000;
-const REFRESH_MS = 60000;
 
 const AccentTints = [
   { ring: "ring-[#3B82F6]/40", glow: "shadow-[0_0_60px_rgba(59,130,246,0.18)]", chip: "from-[#0E47BA]/80 to-[#3B82F6]/60" },
@@ -139,36 +137,22 @@ const ExpertCard = ({ expert, accentIdx, index, isHere }) => {
   );
 };
 
-export const ExpertsScreen = ({ referenceDate = null }) => {
+export const ExpertsScreen = ({ referenceDate = null, experts = null }) => {
   // Resolve "today" from the simulated/server date if provided so the
   // highlight matches what the rest of the dashboard considers "today".
   const today = referenceDate
     ? new Date(`${referenceDate}T12:00:00`)
     : new Date();
 
-  // Pull from API with periodic refresh; fall back to bundled static list
-  // if the backend can't be reached yet.
-  const [experts, setExperts] = useState(STATIC_EXPERTS);
-  useEffect(() => {
-    let alive = true;
-    const load = async () => {
-      try {
-        const data = await fetchExperts();
-        if (alive && Array.isArray(data) && data.length > 0) {
-          setExperts(data.map(adaptExpert));
-        }
-      } catch (_) { /* keep static fallback */ }
-    };
-    load();
-    const t = setInterval(load, REFRESH_MS);
-    return () => {
-      alive = false;
-      clearInterval(t);
-    };
-  }, []);
+  // Parent supplies the (already-adapted) experts list so screen switches
+  // never trigger a fresh API call → no visual pop-in. Fall back to the
+  // bundled static list while the parent is still loading.
+  const effective = Array.isArray(experts) && experts.length > 0
+    ? experts
+    : STATIC_EXPERTS;
 
   // Sort experts so currently-on-site ones lead the rotation.
-  const orderedExperts = [...experts].sort((a, b) => {
+  const orderedExperts = [...effective].sort((a, b) => {
     const ah = isExpertCurrentlyHere(a, today) ? 1 : 0;
     const bh = isExpertCurrentlyHere(b, today) ? 1 : 0;
     return bh - ah;
