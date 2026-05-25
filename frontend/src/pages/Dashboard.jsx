@@ -23,6 +23,7 @@ import {
 } from "../lib/api";
 import { getTodayGermanyMatch } from "../lib/germany";
 import LowerThirdAutoCycle from "../components/LowerThirdAutoCycle";
+import GoalOverlay from "../components/GoalOverlay";
 
 const REFRESH_MS = 60000;
 // When a Germany match is in progress we poll significantly more often so
@@ -315,6 +316,14 @@ export default function Dashboard() {
               currentScreen={current}
               cycleDurationMs={ltCycleMs}
             />
+          )}
+
+          {/* Goal celebration – strictly opt-in:
+              only on the Deutschland-Public-Viewing slide and only while
+              the Germany match is in live-lock. Triggers when Germany
+              scores. Cannot fire on any other screen or for any other team. */}
+          {current === "germany" && germanyLive && germanyMatch && (
+            <GoalOverlay match={germanyMatch} />
           )}
         </main>
 
