@@ -32,7 +32,7 @@ _SETTINGS_ID = "global"
 
 
 VALID_VARIANTS = {"live", "studio", "preview", "halftime", "analysis"}
-VALID_SCREENS = {"today", "next", "germany", "tomorrow", "schedule", "groups"}
+VALID_SCREENS = {"today", "next", "germany", "tomorrow", "schedule", "groups", "experts"}
 VALID_SLOTS = {"header", "stage"}
 
 
@@ -216,6 +216,7 @@ async def get_meta():
             {"id": "tomorrow", "label": "Morgen"},
             {"id": "schedule", "label": "Spielplan"},
             {"id": "groups", "label": "Gruppen"},
+            {"id": "experts", "label": "Experten"},
         ],
         "slots": [
             {"id": "header", "label": "Header-Banner (oben)"},

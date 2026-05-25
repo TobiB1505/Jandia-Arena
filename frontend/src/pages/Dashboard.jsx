@@ -8,6 +8,7 @@ import TomorrowsMatches from "../screens/TomorrowsMatches";
 import Schedule from "../screens/Schedule";
 import GroupTables from "../screens/GroupTables";
 import GermanyPublicViewing from "../screens/GermanyPublicViewing";
+import ExpertsScreen from "../screens/ExpertsScreen";
 import {
   fetchAllMatches,
   fetchSchedule,
@@ -32,12 +33,13 @@ const SCREEN_DURATION_MS = {
   tomorrow: 15000,
   schedule: 30000,
   groups: 35000,
+  experts: 27000,
 };
 
 const BG_URL =
   "https://static.prod-images.emergentagent.com/jobs/350ac180-61fb-48e9-b8d9-50ec9465a89d/images/23f3eed9fb2fcfd8ab6a748b97925a709811830e9d7b64a20dc3c2c64c5edec7.png";
 
-const BASE_SCREENS = ["today", "next", "tomorrow", "schedule", "groups"];
+const BASE_SCREENS = ["today", "next", "tomorrow", "schedule", "groups", "experts"];
 const SCREEN_LABELS = {
   today: "Heute",
   next: "Nächstes",
@@ -45,6 +47,7 @@ const SCREEN_LABELS = {
   tomorrow: "Morgen",
   schedule: "Spielplan",
   groups: "Gruppen",
+  experts: "Experten",
 };
 
 function isSameDay(a, b) {
@@ -243,6 +246,9 @@ export default function Dashboard() {
             )}
             {current === "groups" && (
               <GroupTables key="groups" groups={groups} />
+            )}
+            {current === "experts" && (
+              <ExpertsScreen key="experts" />
             )}
           </AnimatePresence>
 
