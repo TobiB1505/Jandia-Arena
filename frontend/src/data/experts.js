@@ -39,7 +39,9 @@ export const EXPERTS = [
     role: "277 Bundesliga-Spiele · 15 Tore · Premier-League-Erfahrung",
     imageUrl:
       "https://customer-assets.emergentagent.com/job_de479bdb-7280-45ae-b625-da94099aba40/artifacts/ss8xehak_Stefan%20Schnoor.webp",
-    imagePosition: "center 35%",
+    // Photo is a very tight close-up – show the full image (object-contain)
+    // with a blurred backdrop of the same shot so the card stays filled.
+    imageFit: "contain",
   },
   {
     id: "daniela-fuss",
@@ -99,4 +101,22 @@ export function initialsOf(name = "") {
     .slice(0, 2)
     .map((p) => p[0]?.toUpperCase() || "")
     .join("");
+}
+
+/**
+ * True if `today` falls inside `expert.period`.
+ *
+ *   period.from  – "DD.MM." (no year, inherits from `to`)
+ *   period.to    – "DD.MM.YYYY"
+ *   today        – Date object (defaults to now)
+ */
+export function isExpertCurrentlyHere(expert, today = new Date()) {
+  if (!expert?.period?.from || !expert?.period?.to) return false;
+  const to = expert.period.to.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  const from = expert.period.from.match(/^(\d{2})\.(\d{2})\.?$/);
+  if (!to || !from) return false;
+  const year = parseInt(to[3], 10);
+  const start = new Date(year, parseInt(from[2], 10) - 1, parseInt(from[1], 10));
+  const end = new Date(year, parseInt(to[2], 10) - 1, parseInt(to[1], 10), 23, 59, 59);
+  return today >= start && today <= end;
 }

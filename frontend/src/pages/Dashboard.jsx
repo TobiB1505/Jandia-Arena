@@ -248,7 +248,7 @@ export default function Dashboard() {
               <GroupTables key="groups" groups={groups} />
             )}
             {current === "experts" && (
-              <ExpertsScreen key="experts" />
+              <ExpertsScreen key="experts" referenceDate={referenceDate} />
             )}
           </AnimatePresence>
 

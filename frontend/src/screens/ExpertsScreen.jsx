@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ScreenFrame from "../components/ScreenFrame";
-import { EXPERTS, initialsOf } from "../data/experts";
+import { EXPERTS, initialsOf, isExpertCurrentlyHere } from "../data/experts";
 
 const PER_PAGE = 3;
 const PAGE_DURATION_MS = 9000;
@@ -12,31 +12,52 @@ const AccentTints = [
   { ring: "ring-[#8B5CF6]/40", glow: "shadow-[0_0_60px_rgba(139,92,246,0.18)]", chip: "from-[#6D28D9]/80 to-[#8B5CF6]/60" },
 ];
 
-const ExpertCard = ({ expert, accentIdx, index }) => {
+const ExpertCard = ({ expert, accentIdx, index, isHere }) => {
   const accent = AccentTints[accentIdx % AccentTints.length];
+  const fit = expert.imageFit === "contain" ? "object-contain" : "object-cover";
   return (
     <motion.article
       data-testid={`expert-card-${expert.id}`}
+      data-here={isHere ? "true" : "false"}
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -16 }}
       transition={{ duration: 0.55, delay: index * 0.08, ease: [0.22, 1, 0.36, 1] }}
-      className={`relative flex h-full flex-col overflow-hidden rounded-sm border border-blue-400/20 bg-gradient-to-b from-[#0B1535]/95 via-[#0E1B45]/90 to-[#06091a]/95 ${accent.glow}`}
+      className={`relative flex h-full flex-col overflow-hidden rounded-sm border ${
+        isHere
+          ? "border-emerald-400/50 shadow-[0_0_70px_rgba(52,211,153,0.28)]"
+          : `border-blue-400/20 ${accent.glow}`
+      } bg-gradient-to-b from-[#0B1535]/95 via-[#0E1B45]/90 to-[#06091a]/95`}
     >
       {/* Top accent stripe */}
       <div
-        className={`pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${accent.chip}`}
+        className={`pointer-events-none absolute inset-x-0 top-0 h-1 ${
+          isHere
+            ? "bg-gradient-to-r from-emerald-400 via-emerald-300 to-transparent"
+            : `bg-gradient-to-r ${accent.chip}`
+        }`}
       />
 
       {/* Photo / placeholder */}
       <div className="relative h-[440px] w-full overflow-hidden bg-[#0A1128]">
         {expert.imageUrl ? (
-          <img
-            src={expert.imageUrl}
-            alt={expert.name}
-            className="h-full w-full object-cover"
-            style={{ objectPosition: expert.imagePosition || "center top" }}
-          />
+          <>
+            {/* Blurred backdrop fills the area when using object-contain */}
+            {expert.imageFit === "contain" ? (
+              <img
+                src={expert.imageUrl}
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 h-full w-full scale-110 object-cover opacity-40 blur-xl"
+              />
+            ) : null}
+            <img
+              src={expert.imageUrl}
+              alt={expert.name}
+              className={`relative h-full w-full ${fit}`}
+              style={{ objectPosition: expert.imagePosition || "center top" }}
+            />
+          </>
         ) : (
           <div className="relative flex h-full w-full items-center justify-center">
             {/* Decorative grid */}
@@ -64,15 +85,37 @@ const ExpertCard = ({ expert, accentIdx, index }) => {
         )}
         {/* Gradient bottom fade for legibility on real photos */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#06091a] via-[#06091a]/70 to-transparent" />
+
+        {/* "Jetzt vor Ort" live badge */}
+        {isHere ? (
+          <div
+            className="absolute right-4 top-4 flex items-center gap-2 rounded-sm border border-emerald-300/60 bg-emerald-500/15 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.3em] text-emerald-200 backdrop-blur-sm"
+            data-testid={`expert-here-badge-${expert.id}`}
+          >
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-300" />
+            </span>
+            Jetzt vor Ort
+          </div>
+        ) : null}
       </div>
 
       {/* Text block */}
       <div className="flex flex-1 flex-col gap-4 px-8 py-7">
         <div
-          className="inline-flex w-fit items-center gap-3 rounded-sm border border-blue-400/30 bg-[#0a112a] px-3 py-1.5 text-sm font-bold uppercase tracking-[0.3em] text-blue-200"
+          className={`inline-flex w-fit items-center gap-3 rounded-sm border px-3 py-1.5 text-sm font-bold uppercase tracking-[0.3em] ${
+            isHere
+              ? "border-emerald-400/40 bg-emerald-500/10 text-emerald-200"
+              : "border-blue-400/30 bg-[#0a112a] text-blue-200"
+          }`}
           data-testid={`expert-period-${expert.id}`}
         >
-          <span className="h-2 w-2 rounded-full bg-blue-300" />
+          <span
+            className={`h-2 w-2 rounded-full ${
+              isHere ? "bg-emerald-300" : "bg-blue-300"
+            }`}
+          />
           {expert.period.from} – {expert.period.to}
         </div>
 
@@ -94,8 +137,20 @@ const ExpertCard = ({ expert, accentIdx, index }) => {
   );
 };
 
-export const ExpertsScreen = () => {
-  const totalPages = Math.ceil(EXPERTS.length / PER_PAGE);
+export const ExpertsScreen = ({ referenceDate = null }) => {
+  // Resolve "today" from the simulated/server date if provided so the
+  // highlight matches what the rest of the dashboard considers "today".
+  const today = referenceDate
+    ? new Date(`${referenceDate}T12:00:00`)
+    : new Date();
+
+  // Sort experts so currently-on-site ones lead the rotation.
+  const orderedExperts = [...EXPERTS].sort((a, b) => {
+    const ah = isExpertCurrentlyHere(a, today) ? 1 : 0;
+    const bh = isExpertCurrentlyHere(b, today) ? 1 : 0;
+    return bh - ah;
+  });
+  const totalPages = Math.ceil(orderedExperts.length / PER_PAGE);
   const [page, setPage] = useState(0);
 
   useEffect(() => {
@@ -108,7 +163,8 @@ export const ExpertsScreen = () => {
   }, [page, totalPages]);
 
   const start = page * PER_PAGE;
-  const visible = EXPERTS.slice(start, start + PER_PAGE);
+  const visible = orderedExperts.slice(start, start + PER_PAGE);
+  const hereCount = orderedExperts.filter((e) => isExpertCurrentlyHere(e, today)).length;
 
   return (
     <ScreenFrame
@@ -134,6 +190,7 @@ export const ExpertsScreen = () => {
                   expert={expert}
                   accentIdx={i + start}
                   index={i}
+                  isHere={isExpertCurrentlyHere(expert, today)}
                 />
               ))}
               {/* Fill empty slots so layout stays balanced on the last page */}
@@ -154,15 +211,24 @@ export const ExpertsScreen = () => {
               <span
                 key={i}
                 className={`h-1.5 transition-all duration-500 ${
-                  i === page
-                    ? "w-12 bg-blue-300"
-                    : "w-6 bg-blue-300/25"
+                  i === page ? "w-12 bg-blue-300" : "w-6 bg-blue-300/25"
                 } rounded-full`}
               />
             ))}
           </div>
-          <div className="text-sm uppercase tracking-[0.4em] text-blue-300/70">
-            {EXPERTS.length} Experten · Live in der Arena
+          <div className="flex items-center gap-3 text-sm uppercase tracking-[0.4em]">
+            {hereCount > 0 ? (
+              <span className="flex items-center gap-2 text-emerald-300">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-300" />
+                </span>
+                {hereCount} jetzt vor Ort
+              </span>
+            ) : null}
+            <span className="text-blue-300/70">
+              {orderedExperts.length} Experten · Live in der Arena
+            </span>
           </div>
         </div>
       </div>
