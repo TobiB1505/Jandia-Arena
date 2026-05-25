@@ -1,6 +1,7 @@
 import ScreenFrame from "../components/ScreenFrame";
 import Flag from "../components/Flag";
 import StatusBadge from "../components/StatusBadge";
+import StudioLowerThird from "../components/StudioLowerThird";
 import { germanySide } from "../lib/germany";
 
 const TeamBlock = ({ team, accent = false, testId }) => (
@@ -116,39 +117,18 @@ export const GermanyPublicViewing = ({ match }) => {
           />
         </div>
 
-        {/* Promo / CTA block */}
-        <div className="mt-auto pt-10">
-          <div
-            className="relative overflow-hidden rounded-sm border border-blue-400/30 bg-gradient-to-r from-[#0F1B45]/90 via-[#142566]/85 to-[#0F1B45]/90 px-10 py-7 shadow-[0_0_60px_rgba(56,89,189,0.25)]"
-            data-testid="germany-promo"
-          >
-            {/* Side accent bar (Germany flag, very subtle) */}
-            <div className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-black via-[#DD0000] to-[#FFCC00]" />
-
-            <div className="flex items-center justify-between gap-12 pl-6">
-              <div className="flex-1">
-                <p className="font-display text-4xl uppercase leading-tight tracking-wide text-white">
-                  Erlebe das Spiel gemeinsam mit uns auf der grossen Leinwand.
-                </p>
-                <p className="mt-3 text-2xl text-blue-200">
-                  Komm vorbei und sichere dir deinen Platz.
-                </p>
-              </div>
-
-              <div className="hidden h-20 w-px shrink-0 bg-blue-400/30 md:block" />
-
-              <div className="text-right">
-                <div className="font-display text-3xl uppercase tracking-[0.25em] text-white">
-                  Jandia Arena
-                </div>
-                <div className="mt-1 text-base uppercase tracking-[0.45em] text-blue-300">
-                  Robinson Jandia Playa
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Spacer pushes the bottom edge down so the lower-third sits cleanly */}
+        <div className="mt-auto" />
       </div>
+
+      {/* Broadcast-style lower third pinned to the visible bottom of the stage */}
+      <StudioLowerThird
+        variant="preview"
+        label="VORSCHAU"
+        title="Deutschland im Fokus"
+        subtitle="Public Viewing heute in der Jandia Arena"
+        testId="germany-lower-third"
+      />
     </ScreenFrame>
   );
 };
