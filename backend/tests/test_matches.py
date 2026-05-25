@@ -7,7 +7,7 @@ import requests
 from pathlib import Path
 
 
-def _load_backend_url():
+def _load_backend_url() -> str:
     url = os.environ.get("REACT_APP_BACKEND_URL")
     if url:
         return url.rstrip("/")
