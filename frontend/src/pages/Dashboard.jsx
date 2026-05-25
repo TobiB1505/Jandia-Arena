@@ -67,6 +67,16 @@ export default function Dashboard() {
   const [lowerThirds, setLowerThirds] = useState([]);
   const [ltCycleMs, setLtCycleMs] = useState(25000);
 
+  // Allow the admin preview iframe to embed the dashboard without the
+  // lower-third overlay (so the editor can draw its own draggable overlay
+  // on top) and optionally pin to a specific screen (?screen=germany).
+  const urlParams =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search)
+      : new URLSearchParams();
+  const ltSuppressed = urlParams.get("nolt") === "1";
+  const pinnedScreen = urlParams.get("screen");
+
   const load = useCallback(async () => {
     try {
       const [matches, sched, grps, now, lts, ltSettings] = await Promise.all([
@@ -111,13 +121,15 @@ export default function Dashboard() {
   }, [load]);
 
   useEffect(() => {
+    if (pinnedScreen) return; // editor preview: don't auto-rotate
     const duration = SCREEN_DURATION_MS[SCREENS[screenIdx]] || 15000;
     const t = setTimeout(
       () => setScreenIdx((i) => (i + 1) % SCREENS.length),
       duration
     );
     return () => clearTimeout(t);
-  }, [screenIdx]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screenIdx, pinnedScreen]);
 
   useEffect(() => {
     const onChange = () => setIsFullscreen(!!document.fullscreenElement);
@@ -184,7 +196,9 @@ export default function Dashboard() {
     stageRef.current?.enterFullscreen();
   }, []);
 
-  const current = SCREENS[screenIdx];
+  const current = pinnedScreen && SCREENS.includes(pinnedScreen)
+    ? pinnedScreen
+    : SCREENS[screenIdx];
 
   return (
     <BroadcastStage ref={stageRef}>
@@ -230,11 +244,13 @@ export default function Dashboard() {
           </AnimatePresence>
 
           {/* Admin-driven Lower Third auto-cycle (per current screen) */}
-          <LowerThirdAutoCycle
-            items={lowerThirds}
-            currentScreen={current}
-            cycleDurationMs={ltCycleMs}
-          />
+          {!ltSuppressed && (
+            <LowerThirdAutoCycle
+              items={lowerThirds}
+              currentScreen={current}
+              cycleDurationMs={ltCycleMs}
+            />
+          )}
         </main>
 
         {/* Footer: screen indicator only */}

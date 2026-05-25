@@ -64,6 +64,19 @@ export async function updateLowerThirdsSettings(payload) {
   return res.data;
 }
 
+export async function patchLowerThirdPosition(id, position_x, position_y) {
+  const res = await axios.patch(`${API}/lower-thirds/${id}/position`, {
+    position_x,
+    position_y,
+  });
+  return res.data;
+}
+
+export async function patchLowerThirdActive(id, active) {
+  const res = await axios.patch(`${API}/lower-thirds/${id}/active`, { active });
+  return res.data;
+}
+
 // In-memory demo fallback (used when backend is unreachable)
 const _mkIso = (offsetMin) =>
   new Date(Date.now() + offsetMin * 60 * 1000).toISOString();

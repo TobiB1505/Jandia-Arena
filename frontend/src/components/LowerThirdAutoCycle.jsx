@@ -71,6 +71,8 @@ export default function LowerThirdAutoCycle({
       subtitle={item.subtitle}
       variant={item.variant}
       visible={visible}
+      positionX={item.position_x ?? null}
+      positionY={item.position_y ?? null}
       testId="auto-cycle-lower-third"
     />
   );

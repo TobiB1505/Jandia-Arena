@@ -27,7 +27,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../components/ui/dialog";
-import StudioLowerThird from "../components/StudioLowerThird";
+import LowerThirdLiveEditor from "../components/LowerThirdLiveEditor";
 import {
   fetchLowerThirds,
   fetchLowerThirdsSettings,
@@ -36,6 +36,7 @@ import {
   updateLowerThird,
   deleteLowerThird,
   updateLowerThirdsSettings,
+  patchLowerThirdActive,
 } from "../lib/api";
 
 const EMPTY = {
@@ -56,6 +57,7 @@ export default function Admin() {
   const [editing, setEditing] = useState(null); // null = closed, {} = new, {...} = edit
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [previewScreen, setPreviewScreen] = useState("germany");
 
   const refresh = async () => {
     const [list, settings, m] = await Promise.all([
@@ -218,7 +220,7 @@ export default function Admin() {
                     onDelete={() => setConfirmDelete(item)}
                     onToggleActive={async (active) => {
                       try {
-                        await updateLowerThird(item.id, { ...item, active });
+                        await patchLowerThirdActive(item.id, active);
                         await refresh();
                       } catch (e) {
                         toast.error("Update fehlgeschlagen: " + e.message);
@@ -231,45 +233,21 @@ export default function Admin() {
           </CardContent>
         </Card>
 
-        {/* Live preview */}
+        {/* Live preview / drag-and-drop editor */}
         <Card className="border-blue-400/20 bg-[#0c1430]">
           <CardHeader>
-            <CardTitle className="text-blue-100">Vorschau</CardTitle>
+            <CardTitle className="text-blue-100">
+              Live-Vorschau · Drag &amp; Drop
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div
-              className="relative mx-auto overflow-hidden rounded-lg bg-[#0A1128]"
-              style={{ width: "100%", aspectRatio: "16 / 9" }}
-              data-testid="lower-third-preview"
-            >
-              <div className="absolute inset-0">
-                <div
-                  className="absolute"
-                  style={{
-                    width: 1920,
-                    height: 1080,
-                    transformOrigin: "top left",
-                    transform: "scale(0.42)",
-                    background:
-                      "radial-gradient(circle at center, #142062 0%, #06091a 65%)",
-                  }}
-                >
-                  {items
-                    .filter((i) => i.active)
-                    .slice(0, 1)
-                    .map((i) => (
-                      <StudioLowerThird
-                        key={i.id}
-                        label={i.label}
-                        title={i.title}
-                        subtitle={i.subtitle}
-                        variant={i.variant}
-                        visible={true}
-                      />
-                    ))}
-                </div>
-              </div>
-            </div>
+            <LowerThirdLiveEditor
+              items={items}
+              meta={meta}
+              selectedScreen={previewScreen}
+              onScreenChange={setPreviewScreen}
+              onPersisted={refresh}
+            />
           </CardContent>
         </Card>
       </div>
@@ -362,9 +340,14 @@ function ItemRow({ item, meta, onEdit, onDelete, onToggleActive }) {
             checked={item.active}
             onCheckedChange={onToggleActive}
             data-testid={`toggle-active-${item.id}`}
+            className="h-7 w-12 data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-zinc-600"
           />
-          <span className="text-xs uppercase tracking-widest text-blue-300">
-            {item.active ? "Aktiv" : "Aus"}
+          <span
+            className={`min-w-[3.5rem] text-center text-xs font-bold uppercase tracking-widest ${
+              item.active ? "text-emerald-300" : "text-zinc-400"
+            }`}
+          >
+            {item.active ? "AKTIV" : "AUS"}
           </span>
         </div>
         <Button

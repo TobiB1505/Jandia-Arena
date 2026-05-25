@@ -61,18 +61,22 @@ Create a 16:9 TV dashboard web app for "JANDIA ARENA". The app will be displayed
 - [x] Match-Screens fallen automatisch auf Demo-Daten zurück solange WM 2026 noch nicht gestartet hat
 
 ## Iteration 5 (2026-05-25) – Lower Thirds + Admin
-- [x] **StudioLowerThird** wiederverwendbare Komponente (label, title, subtitle, variant, visible, position)
+- [x] **StudioLowerThird** wiederverwendbare Komponente (label, title, subtitle, variant, visible, position, positionX, positionY, draggable)
 - [x] 5 Varianten: live (pulsing red dot), studio, preview, halftime, analysis
 - [x] Reine CSS-Animationen (slide-in/-out, shine, pulse), `prefers-reduced-motion` Fallback
 - [x] **Deutschland Public Viewing Screen** (Auto-Rotation nur wenn heute Deutschland-Spiel)
 - [x] Utility `getTodayGermanyMatch` (erkennt Deutschland/Germany/GER/DE, Priorität Live > Upcoming > Finished)
 - [x] **Admin-Bereich** unter `/admin` (kein Schutz, geheime URL)
-- [x] Admin CRUD für Lower Thirds (Label, Title, Subtitle, Variant, Aktiv, Reihenfolge, Screens-Multiselect)
+- [x] Admin CRUD für Lower Thirds (Label, Title, Subtitle, Variant, Aktiv, Reihenfolge, Screens-Multiselect, Position)
 - [x] Globale Cycle-Dauer einstellbar (≥3s)
 - [x] **Auto-Cycle** pro Screen: zeigt nacheinander alle aktiven Lower Thirds, die für den aktuellen Screen markiert sind
+- [x] **Live-Editor** mit Iframe-Vorschau + Drag-and-Drop Positionierung pro Lower Third
+- [x] Screen-Tabs zum Pinnen des Iframes (`/?nolt=1&screen=germany`) – Editor zeigt nur LTs für gewählten Screen
+- [x] Switch deutlich grün/grau, AKTIV/AUS Label, dazu PATCH /active und /position Endpoints (atomic)
+- [x] Body-Scroll-Lock nur im TV-Modus (`body.tv-mode`) – Admin scrollt normal
 - [x] MongoDB-Persistenz (`lower_thirds`, `lower_thirds_settings`), Seed beim ersten Start (3 Defaults)
-- [x] Backend Endpoints: GET/POST/PUT/DELETE `/api/lower-thirds`, GET/PUT `/api/lower-thirds/settings`, GET `/api/lower-thirds/meta`
-- [x] 11/11 Backend-Pytests grün, Frontend E2E (CRUD + Cycle) verifiziert
+- [x] Backend Endpoints: GET/POST/PUT/DELETE `/api/lower-thirds`, GET/PUT `/api/lower-thirds/settings`, PATCH `/api/lower-thirds/{id}/position`, PATCH `/api/lower-thirds/{id}/active`, GET `/api/lower-thirds/meta`
+- [x] 11/11 Backend-Pytests grün, Drag-Drop + Persistence E2E verifiziert
 
 ## Backlog (P1)
 - Tor-Animations-Overlay (4s "GOOOAL!" wenn Live-Score sich ändert)

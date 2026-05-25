@@ -22,6 +22,38 @@
   top: 96px;
 }
 
+/* Free positioning (admin drag editor or saved coords). Disables the CSS
+   centering so left/top from inline style win. */
+.studio-lt--free {
+  transform: none;
+}
+
+/* Admin editor states ---------------------------------------------------- */
+.studio-lt--editable {
+  pointer-events: auto;  /* override the TV default so dragging works */
+}
+.studio-lt--editable .studio-lt__inner {
+  cursor: grab;
+  outline: 1px dashed rgba(120, 170, 255, 0.45);
+  outline-offset: 4px;
+}
+.studio-lt--editable:active .studio-lt__inner {
+  cursor: grabbing;
+}
+.studio-lt--selected .studio-lt__inner {
+  outline: 2px solid rgba(120, 200, 255, 0.85);
+  outline-offset: 6px;
+  box-shadow:
+    0 18px 60px rgba(0, 0, 0, 0.55),
+    0 0 0 4px rgba(96, 165, 250, 0.25),
+    0 0 60px rgba(56, 110, 220, 0.4);
+}
+.studio-lt--editable,
+.studio-lt--editable * {
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
 /* ===== Enter / Exit ===== */
 .studio-lt--in {
   animation: studio-lt-in 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -223,6 +255,13 @@
   background: rgba(167, 139, 250, 0.14);
   border-color: rgba(167, 139, 250, 0.5);
   color: #ece4ff;
+}
+
+/* Editor mode disables enter/exit animation so dragging feels instant */
+.studio-lt--editable.studio-lt--in,
+.studio-lt--editable.studio-lt--out {
+  animation: none !important;
+  opacity: 1;
 }
 
 /* Reduced motion fallback – important for long-running TV browsers */

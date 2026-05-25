@@ -9,7 +9,7 @@ from __future__ import annotations
 import os
 import uuid
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException
@@ -45,6 +45,10 @@ class LowerThird(BaseModel):
     active: bool = True
     order: int = 0
     screens: List[str] = Field(default_factory=list)
+    # Optional pixel position inside the 1920x1080 broadcast stage.
+    # null/None → fall back to the CSS default (centered, bottom: 96px).
+    position_x: Optional[int] = None
+    position_y: Optional[int] = None
 
 
 class LowerThirdInput(BaseModel):
@@ -55,6 +59,8 @@ class LowerThirdInput(BaseModel):
     active: bool = True
     order: int = 0
     screens: List[str] = Field(default_factory=list)
+    position_x: Optional[int] = None
+    position_y: Optional[int] = None
 
 
 class LowerThirdSettings(BaseModel):
@@ -125,6 +131,63 @@ async def delete_item(item_id: str):
     if res.deleted_count == 0:
         raise HTTPException(404, "Lower Third nicht gefunden")
     return {"ok": True}
+
+
+class PositionInput(BaseModel):
+    position_x: Optional[int] = None
+    position_y: Optional[int] = None
+
+
+@router.patch("/{item_id}/position", response_model=LowerThird)
+async def patch_position(item_id: str, payload: PositionInput):
+    """Lightweight endpoint used by the admin drag-and-drop editor.
+
+    null values explicitly clear the stored coordinate (→ CSS default).
+    Fields not present in the payload are left untouched.
+    """
+    existing = await _items_col.find_one({"id": item_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(404, "Lower Third nicht gefunden")
+    sets = {}
+    unsets = {}
+    fields_set = payload.model_fields_set
+    if "position_x" in fields_set:
+        if payload.position_x is None:
+            unsets["position_x"] = ""
+            existing["position_x"] = None
+        else:
+            sets["position_x"] = max(0, min(1920, int(payload.position_x)))
+            existing["position_x"] = sets["position_x"]
+    if "position_y" in fields_set:
+        if payload.position_y is None:
+            unsets["position_y"] = ""
+            existing["position_y"] = None
+        else:
+            sets["position_y"] = max(0, min(1080, int(payload.position_y)))
+            existing["position_y"] = sets["position_y"]
+    update_op = {}
+    if sets:
+        update_op["$set"] = sets
+    if unsets:
+        update_op["$unset"] = unsets
+    if update_op:
+        await _items_col.update_one({"id": item_id}, update_op)
+    return LowerThird(**existing)
+
+
+class ActiveInput(BaseModel):
+    active: bool
+
+
+@router.patch("/{item_id}/active", response_model=LowerThird)
+async def patch_active(item_id: str, payload: ActiveInput):
+    """Lightweight toggle so the admin doesn't need to send the full payload."""
+    existing = await _items_col.find_one({"id": item_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(404, "Lower Third nicht gefunden")
+    await _items_col.update_one({"id": item_id}, {"$set": {"active": bool(payload.active)}})
+    existing["active"] = bool(payload.active)
+    return LowerThird(**existing)
 
 
 @router.get("/meta")
