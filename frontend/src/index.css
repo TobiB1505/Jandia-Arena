@@ -58,6 +58,13 @@ body,
     font-family: "Cera ROB", "Outfit", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+}
+
+/* Dashboard route locks scroll because BroadcastStage already covers the
+   whole viewport. Other routes (e.g. /admin) need normal page scrolling,
+   so we toggle this via a body class. */
+body.tv-mode,
+body.tv-mode #root {
     overflow: hidden;
 }
 

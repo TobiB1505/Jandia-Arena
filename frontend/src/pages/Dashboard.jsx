@@ -125,6 +125,13 @@ export default function Dashboard() {
     return () => document.removeEventListener("fullscreenchange", onChange);
   }, []);
 
+  // Lock body scroll only while the TV dashboard is mounted, so /admin etc.
+  // can still scroll normally.
+  useEffect(() => {
+    document.body.classList.add("tv-mode");
+    return () => document.body.classList.remove("tv-mode");
+  }, []);
+
   const today = referenceDate ? new Date(`${referenceDate}T00:00:00`) : new Date();
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
