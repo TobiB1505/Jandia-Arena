@@ -158,6 +158,11 @@ def _cache_set(key: str, value: Any):
     _cache[key] = (time.time(), value)
 
 
+def cache_clear():
+    """Wipe the entire in-memory cache (e.g. after simulated-date toggle)."""
+    _cache.clear()
+
+
 # ---------- HTTP client ----------
 async def _api_get(path: str, params: dict | None = None) -> Optional[dict]:
     key = os.environ.get("FOOTBALL_API_KEY", "").strip()

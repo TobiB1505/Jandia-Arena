@@ -48,10 +48,30 @@ class Match(BaseModel):
 
 # ---------- Demo data generator ----------
 # Anchor 'today' to a configurable date so the TV behaves as if it were that day.
-# Set SIMULATE_DATE=YYYY-MM-DD in .env to anchor to a specific day (e.g. WC opening day).
+# Priority:
+#   1) Runtime override stored in MongoDB (`runtime_settings.simulate_date`)
+#      - empty string ""  -> live mode (no simulation, overrides env)
+#      - "YYYY-MM-DD"     -> simulated date
+#   2) Fallback to env var `SIMULATE_DATE` (bootstrap default)
 # Time-of-day stays real so the clock keeps ticking normally.
+_runtime_state: dict = {
+    # None  -> no runtime override, use env
+    # ""    -> explicit live mode
+    # "YYYY-MM-DD" -> simulated date
+    "simulate_date_override": None,
+}
+
+
+def _effective_simulate_date() -> str:
+    """Return the simulate-date string that should currently be used ('' = live)."""
+    override = _runtime_state.get("simulate_date_override")
+    if override is not None:
+        return override
+    return os.environ.get("SIMULATE_DATE", "").strip()
+
+
 def _now() -> datetime:
-    simulated = os.environ.get("SIMULATE_DATE", "").strip()
+    simulated = _effective_simulate_date()
     real_now = datetime.now(timezone.utc)
     if simulated:
         try:
@@ -370,13 +390,95 @@ async def _resolve_matches_all() -> tuple[List[Match], str]:
 
 @api_router.get("/now")
 async def get_now():
-    """Returns the dashboard's reference time (real or simulated via SIMULATE_DATE)."""
+    """Returns the dashboard's reference time (real or simulated)."""
     n = _now()
+    sim = _effective_simulate_date()
     return {
         "iso": n.isoformat(),
         "date": n.strftime("%Y-%m-%d"),
-        "simulated": bool(os.environ.get("SIMULATE_DATE", "").strip()),
+        "simulated": bool(sim),
     }
+
+
+# ---------- Runtime settings: simulate-date toggle ----------
+_RUNTIME_DOC_ID = "simulate_date"
+
+
+async def _load_simulate_date_override():
+    """Hydrate the in-memory override from MongoDB on startup."""
+    try:
+        doc = await db.runtime_settings.find_one({"_id": _RUNTIME_DOC_ID})
+        if doc is None:
+            _runtime_state["simulate_date_override"] = None
+        else:
+            # value: None means use env, "" means live, else date string
+            _runtime_state["simulate_date_override"] = doc.get("value")
+    except Exception as e:  # noqa: BLE001
+        logging.getLogger(__name__).warning("Load simulate-date override failed: %s", e)
+
+
+class SimulateDateBody(BaseModel):
+    date: str  # "YYYY-MM-DD"
+
+
+@api_router.get("/settings/simulate-date")
+async def get_simulate_date():
+    override = _runtime_state.get("simulate_date_override")
+    env_value = os.environ.get("SIMULATE_DATE", "").strip()
+    effective = _effective_simulate_date()
+    if override is None:
+        source = "env" if env_value else "live"
+    elif override == "":
+        source = "runtime_live"
+    else:
+        source = "runtime_simulated"
+    return {
+        "effective_date": effective,            # "" = live mode
+        "live": effective == "",
+        "source": source,                       # env | live | runtime_live | runtime_simulated
+        "env_value": env_value,
+        "override": override,
+    }
+
+
+@api_router.put("/settings/simulate-date")
+async def set_simulate_date(body: SimulateDateBody):
+    """Set a simulated date as a runtime override (persists in Mongo)."""
+    date_str = (body.date or "").strip()
+    try:
+        datetime.strptime(date_str, "%Y-%m-%d")
+    except ValueError:
+        return {"ok": False, "error": "invalid_date_format", "expected": "YYYY-MM-DD"}
+    await db.runtime_settings.update_one(
+        {"_id": _RUNTIME_DOC_ID},
+        {"$set": {"value": date_str, "updated_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True,
+    )
+    _runtime_state["simulate_date_override"] = date_str
+    football_api.cache_clear()
+    return await get_simulate_date()
+
+
+@api_router.post("/settings/simulate-date/live")
+async def enable_live_mode():
+    """Switch off all simulation (overrides any env value). Real-time data only."""
+    await db.runtime_settings.update_one(
+        {"_id": _RUNTIME_DOC_ID},
+        {"$set": {"value": "", "updated_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True,
+    )
+    _runtime_state["simulate_date_override"] = ""
+    football_api.cache_clear()
+    return await get_simulate_date()
+
+
+@api_router.delete("/settings/simulate-date")
+async def reset_simulate_date():
+    """Remove the runtime override, falling back to the env-configured default."""
+    await db.runtime_settings.delete_one({"_id": _RUNTIME_DOC_ID})
+    _runtime_state["simulate_date_override"] = None
+    football_api.cache_clear()
+    return await get_simulate_date()
 
 
 @api_router.get("/source")
@@ -506,6 +608,11 @@ async def _seed_experts():
 @app.on_event("startup")
 async def _init_object_storage():
     experts_module.init_storage_safe()
+
+
+@app.on_event("startup")
+async def _hydrate_runtime_settings():
+    await _load_simulate_date_override()
 
 app.add_middleware(
     CORSMiddleware,

@@ -18,6 +18,27 @@ export async function fetchNow() {
   return res.data;
 }
 
+// --- Simulate-date runtime override ---
+export async function fetchSimulateDate() {
+  const res = await axios.get(`${API}/settings/simulate-date`);
+  return res.data;
+}
+
+export async function setSimulateDate(date) {
+  const res = await axios.put(`${API}/settings/simulate-date`, { date });
+  return res.data;
+}
+
+export async function enableLiveMode() {
+  const res = await axios.post(`${API}/settings/simulate-date/live`);
+  return res.data;
+}
+
+export async function resetSimulateDate() {
+  const res = await axios.delete(`${API}/settings/simulate-date`);
+  return res.data;
+}
+
 export async function fetchGroups() {
   const res = await axios.get(`${API}/groups`);
   return res.data;

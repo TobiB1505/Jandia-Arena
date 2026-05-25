@@ -29,6 +29,7 @@ import {
 } from "../components/ui/dialog";
 import LowerThirdLiveEditor from "../components/LowerThirdLiveEditor";
 import ExpertsAdmin from "../components/ExpertsAdmin";
+import SimulateDateAdmin from "../components/SimulateDateAdmin";
 import {
   fetchLowerThirds,
   fetchLowerThirdsSettings,
@@ -159,6 +160,9 @@ export default function Admin() {
             Zur TV-Ansicht
           </a>
         </header>
+
+        {/* Daten-Modus / Simulated Date */}
+        <SimulateDateAdmin />
 
         {/* Global settings */}
         <Card className="border-blue-400/20 bg-[#0c1430]">
