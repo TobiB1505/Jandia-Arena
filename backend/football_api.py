@@ -17,6 +17,13 @@ CACHE_TTL_FIXTURES = 180        # 3 min – fixtures + live scores
 CACHE_TTL_FIXTURES_LIVE = 20    # 20 s – shorter window when there's a live match
 CACHE_TTL_STANDINGS = 300       # 5 min – standings update faster
 
+# Football-Data.org free tier hard limit: 10 calls per minute.
+# We add a safety margin so concurrent endpoints can never trip it.
+RATE_LIMIT_WINDOW_S = 60
+RATE_LIMIT_MAX_CALLS = 9        # 9/10 of the documented quota
+# Rolling timestamps of outbound requests (most recent first not required).
+_call_log: list = []
+
 
 # Team / Country → ISO flag code + German display name.
 # Football-Data.org returns team.name in English (e.g. "Germany").
@@ -180,11 +187,41 @@ def cache_clear():
     _cache.clear()
 
 
+def _prune_call_log(now: float) -> None:
+    cutoff = now - RATE_LIMIT_WINDOW_S
+    # Drop anything outside the 60s rolling window
+    while _call_log and _call_log[0] < cutoff:
+        _call_log.pop(0)
+
+
+def get_call_stats() -> dict:
+    """Public snapshot of recent outbound calls (used by /api/source)."""
+    now = time.time()
+    _prune_call_log(now)
+    return {
+        "calls_last_60s": len(_call_log),
+        "limit_per_minute": RATE_LIMIT_MAX_CALLS,
+        "limit_documented": 10,
+    }
+
+
 # ---------- HTTP client ----------
 async def _api_get(path: str, params: dict | None = None) -> Optional[dict]:
     key = os.environ.get("FOOTBALL_API_KEY", "").strip()
     if not key:
         return None
+
+    # Defensive rate-limit: never exceed the documented 10 calls/minute.
+    now = time.time()
+    _prune_call_log(now)
+    if len(_call_log) >= RATE_LIMIT_MAX_CALLS:
+        logger.warning(
+            "Football-Data rate-limit guard hit (%d/%d in last %ds), skipping %s",
+            len(_call_log), RATE_LIMIT_MAX_CALLS, RATE_LIMIT_WINDOW_S, path,
+        )
+        return None
+    _call_log.append(now)
+
     headers = {"X-Auth-Token": key}
     try:
         async with httpx.AsyncClient(timeout=8.0) as client:

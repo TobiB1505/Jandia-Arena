@@ -488,6 +488,7 @@ async def get_source():
         "matches": _state["matches_source"],
         "groups": _state["groups_source"],
         "api_configured": football_api.is_api_configured(),
+        "rate_limit": football_api.get_call_stats(),
     }
 
 
