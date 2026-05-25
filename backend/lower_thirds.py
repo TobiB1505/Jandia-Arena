@@ -33,6 +33,7 @@ _SETTINGS_ID = "global"
 
 VALID_VARIANTS = {"live", "studio", "preview", "halftime", "analysis"}
 VALID_SCREENS = {"today", "next", "germany", "tomorrow", "schedule", "groups"}
+VALID_SLOTS = {"header", "stage"}
 
 
 # ---- Models ----
@@ -45,8 +46,12 @@ class LowerThird(BaseModel):
     active: bool = True
     order: int = 0
     screens: List[str] = Field(default_factory=list)
-    # Optional pixel position inside the 1920x1080 broadcast stage.
-    # null/None → fall back to the CSS default (centered, bottom: 96px).
+    # Where in the dashboard this banner is rendered.
+    # "header" – slim ticker in the top header bar (default)
+    # "stage"  – classic broadcast lower third with position_x/y inside the stage
+    slot: str = "header"
+    # Pixel position inside the 1920x1080 broadcast stage (slot=="stage" only).
+    # null/None → CSS default (centered, bottom: 96px).
     position_x: Optional[int] = None
     position_y: Optional[int] = None
 
@@ -59,6 +64,7 @@ class LowerThirdInput(BaseModel):
     active: bool = True
     order: int = 0
     screens: List[str] = Field(default_factory=list)
+    slot: str = "header"
     position_x: Optional[int] = None
     position_y: Optional[int] = None
 
@@ -67,9 +73,11 @@ class LowerThirdSettings(BaseModel):
     cycle_duration_ms: int = 25000
 
 
-def _validate(variant: str, screens: List[str]) -> None:
+def _validate(variant: str, screens: List[str], slot: str = "header") -> None:
     if variant not in VALID_VARIANTS:
         raise HTTPException(400, f"Ungültige Variante: {variant}")
+    if slot not in VALID_SLOTS:
+        raise HTTPException(400, f"Ungültiger Slot: {slot}")
     for s in screens:
         if s not in VALID_SCREENS:
             raise HTTPException(400, f"Ungültiger Screen: {s}")
@@ -88,7 +96,7 @@ async def list_items():
 
 @router.post("", response_model=LowerThird)
 async def create_item(payload: LowerThirdInput):
-    _validate(payload.variant, payload.screens)
+    _validate(payload.variant, payload.screens, payload.slot)
     item = LowerThird(**payload.model_dump())
     await _items_col.insert_one(item.model_dump())
     return item
@@ -116,7 +124,7 @@ async def update_settings(payload: LowerThirdSettings):
 
 @router.put("/{item_id}", response_model=LowerThird)
 async def update_item(item_id: str, payload: LowerThirdInput):
-    _validate(payload.variant, payload.screens)
+    _validate(payload.variant, payload.screens, payload.slot)
     existing = await _items_col.find_one({"id": item_id}, {"_id": 0})
     if not existing:
         raise HTTPException(404, "Lower Third nicht gefunden")
@@ -209,6 +217,10 @@ async def get_meta():
             {"id": "schedule", "label": "Spielplan"},
             {"id": "groups", "label": "Gruppen"},
         ],
+        "slots": [
+            {"id": "header", "label": "Header-Banner (oben)"},
+            {"id": "stage", "label": "Stage-Overlay (unten, frei platzierbar)"},
+        ],
     }
 
 
@@ -219,31 +231,34 @@ async def seed_defaults_if_empty() -> None:
         return
     defaults = [
         LowerThird(
-            label="VORSCHAU",
-            title="Deutschland im Fokus",
-            subtitle="Public Viewing heute in der Jandia Arena",
+            label="HEUTE",
+            title="Deutschland Public Viewing",
+            subtitle="Sichere dir deinen Platz vor der grossen Leinwand",
             variant="preview",
             active=True,
             order=0,
-            screens=["germany"],
+            screens=["today", "next", "germany", "tomorrow", "schedule", "groups"],
+            slot="header",
         ),
         LowerThird(
-            label="STUDIO",
-            title="Jandia Arena Studio",
-            subtitle="Live aus dem Public Viewing Bereich",
+            label="HAPPY HOUR",
+            title="2-für-1 Cocktails ab 18 Uhr",
+            subtitle="An allen Bars der Robinson Jandia Playa",
             variant="studio",
             active=False,
             order=1,
-            screens=["today", "next"],
+            screens=["today", "next", "germany", "tomorrow", "schedule", "groups"],
+            slot="header",
         ),
         LowerThird(
-            label="ANALYSE",
-            title="Experten-Talk",
-            subtitle="Taktik, Emotionen und Stimmen aus der Arena",
-            variant="analysis",
+            label="ANSTOSS",
+            title="Spiel startet in Kürze",
+            subtitle="Geniesst die Atmosphäre in der Jandia Arena",
+            variant="live",
             active=False,
             order=2,
-            screens=["groups"],
+            screens=["today", "next", "germany"],
+            slot="header",
         ),
     ]
     await _items_col.insert_many([d.model_dump() for d in defaults])

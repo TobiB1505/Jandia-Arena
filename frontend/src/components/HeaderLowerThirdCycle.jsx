@@ -1,32 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
-import StudioLowerThird from "./StudioLowerThird";
+import HeaderLowerThird from "./HeaderLowerThird";
 
 /**
- * Auto-cycles through admin-configured Lower Thirds for the currently active
- * screen. Cross-fades by toggling `visible` on the StudioLowerThird so its
- * existing CSS in/out animation runs cleanly between items.
- *
- * Props:
- *  - items: full list of LowerThird records from /api/lower-thirds
- *  - currentScreen: id of the screen currently visible in the rotation
- *  - cycleDurationMs: dwell time per lower-third
+ * Slim header-slot cycle. Filters incoming items by slot=="header" and the
+ * currently visible dashboard screen, then auto-cycles through them with the
+ * configured dwell time. Same swap pattern as LowerThirdAutoCycle.
  */
-const OUT_ANIMATION_MS = 500; // matches studio-lt-out keyframes
+const OUT_ANIMATION_MS = 400; // matches hlt-out keyframes
 
-export default function LowerThirdAutoCycle({
+export default function HeaderLowerThirdCycle({
   items,
   currentScreen,
   cycleDurationMs = 25000,
 }) {
-  // Filter to items the admin wired to this screen + active + stage slot.
-  // Header-slot items are rendered separately by HeaderLowerThirdCycle.
   const eligible = useMemo(() => {
     if (!Array.isArray(items)) return [];
     const list = items.filter(
       (i) =>
         i &&
         i.active &&
-        (i.slot || "header") === "stage" &&
+        (i.slot || "header") === "header" &&
         Array.isArray(i.screens) &&
         i.screens.includes(currentScreen)
     );
@@ -37,7 +30,6 @@ export default function LowerThirdAutoCycle({
   const [idx, setIdx] = useState(0);
   const [visible, setVisible] = useState(true);
 
-  // Reset cycle when the screen changes or eligible list shape changes
   useEffect(() => {
     setIdx(0);
     setVisible(eligible.length > 0);
@@ -46,23 +38,21 @@ export default function LowerThirdAutoCycle({
   useEffect(() => {
     if (eligible.length === 0) return;
     if (eligible.length === 1) {
-      // Single item: stay visible the whole time, no cycle
       setVisible(true);
       return;
     }
     const dwell = Math.max(3000, cycleDurationMs);
+    let swap;
     const t = setTimeout(() => {
       setVisible(false);
-      const swap = setTimeout(() => {
+      swap = setTimeout(() => {
         setIdx((i) => (i + 1) % eligible.length);
         setVisible(true);
       }, OUT_ANIMATION_MS);
-      // cleanup nested timer if effect re-runs
-      window.__lt_swap = swap;
     }, dwell);
     return () => {
       clearTimeout(t);
-      if (window.__lt_swap) clearTimeout(window.__lt_swap);
+      if (swap) clearTimeout(swap);
     };
   }, [idx, eligible, cycleDurationMs]);
 
@@ -70,16 +60,14 @@ export default function LowerThirdAutoCycle({
   const item = eligible[idx] || eligible[0];
 
   return (
-    <StudioLowerThird
+    <HeaderLowerThird
       key={item.id}
       label={item.label}
       title={item.title}
       subtitle={item.subtitle}
       variant={item.variant}
       visible={visible}
-      positionX={item.position_x ?? null}
-      positionY={item.position_y ?? null}
-      testId="auto-cycle-lower-third"
+      testId="header-cycle-lower-third"
     />
   );
 }

@@ -47,6 +47,7 @@ const EMPTY = {
   active: true,
   order: 0,
   screens: [],
+  slot: "header",
 };
 
 export default function Admin() {
@@ -98,6 +99,7 @@ export default function Admin() {
         active: !!form.active,
         order: parseInt(form.order || 0, 10),
         screens: form.screens,
+        slot: form.slot || "header",
       };
       if (!payload.title) {
         toast.error("Titel ist Pflicht");
@@ -312,6 +314,15 @@ function ItemRow({ item, meta, onEdit, onDelete, onToggleActive }) {
           <span className="rounded-sm border border-blue-400/30 bg-blue-400/10 px-2 py-0.5 text-xs uppercase tracking-widest text-blue-200">
             {item.variant}
           </span>
+          <span
+            className={`rounded-sm px-2 py-0.5 text-xs uppercase tracking-widest ${
+              (item.slot || "header") === "header"
+                ? "border border-cyan-400/30 bg-cyan-400/10 text-cyan-100"
+                : "border border-amber-400/30 bg-amber-400/10 text-amber-100"
+            }`}
+          >
+            {(item.slot || "header") === "header" ? "Header" : "Stage"}
+          </span>
           <span className="text-xs uppercase tracking-widest text-blue-300/70">
             {item.label || "—"}
           </span>
@@ -389,6 +400,14 @@ function ItemDialog({ open, initial, meta, saving, onClose, onSubmit }) {
 
   const variants = useMemo(() => meta.variants || [], [meta]);
   const screens = useMemo(() => meta.screens || [], [meta]);
+  const slots = useMemo(
+    () =>
+      meta.slots || [
+        { id: "header", label: "Header-Banner (oben)" },
+        { id: "stage", label: "Stage-Overlay (unten, frei platzierbar)" },
+      ],
+    [meta]
+  );
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -403,6 +422,32 @@ function ItemDialog({ open, initial, meta, saving, onClose, onSubmit }) {
         </DialogHeader>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="md:col-span-2">
+            <Label>Position im Dashboard</Label>
+            <Select
+              value={form.slot || "header"}
+              onValueChange={(v) => setForm((f) => ({ ...f, slot: v }))}
+            >
+              <SelectTrigger
+                className="mt-2 bg-[#0a112a]"
+                data-testid="slot-select"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {slots.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="mt-1 text-xs text-blue-300/70">
+              Header = schmaler Promo-Banner zwischen Logo und Uhr. Stage =
+              klassischer Lower Third unten im Bild, frei per Drag &amp; Drop
+              positionierbar.
+            </p>
+          </div>
           <div>
             <Label>Variant</Label>
             <Select

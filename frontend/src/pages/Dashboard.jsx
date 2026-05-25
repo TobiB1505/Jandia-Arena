@@ -221,6 +221,9 @@ export default function Dashboard() {
           isFullscreen={isFullscreen}
           lastUpdatedAt={lastUpdatedAt}
           referenceDate={referenceDate}
+          lowerThirds={ltSuppressed ? [] : lowerThirds}
+          ltCycleMs={ltCycleMs}
+          currentScreen={current}
         />
 
         <main className="relative flex-1 min-h-0">

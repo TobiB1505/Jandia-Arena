@@ -50,12 +50,14 @@ export default function LowerThirdLiveEditor({
     return () => ro.disconnect();
   }, []);
 
-  // Items eligible for the currently-previewed screen
+  // Items eligible for the currently-previewed screen (stage slot only –
+  // header items are pinned in the header bar and don't need positioning)
   const eligible = useMemo(() => {
     return (items || []).filter(
       (i) =>
         i &&
         i.active &&
+        (i.slot || "header") === "stage" &&
         Array.isArray(i.screens) &&
         i.screens.includes(selectedScreen)
     );
@@ -236,8 +238,11 @@ export default function LowerThirdLiveEditor({
         >
           {eligible.length === 0 ? (
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-md border border-blue-400/30 bg-black/60 px-6 py-4 text-blue-200">
-              Keine aktiven Lower Thirds für{" "}
+              Keine aktiven Stage-Lower-Thirds für{" "}
               <strong className="text-white">{screenButtons.find((s) => s.id === selectedScreen)?.label}</strong>.
+              <div className="mt-1 text-xs text-blue-300/70">
+                Header-Banner siehst du oben im echten Header der TV-Wand.
+              </div>
             </div>
           ) : (
             eligible.map((item) => {

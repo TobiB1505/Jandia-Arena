@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import LastUpdated from "./LastUpdated";
+import HeaderLowerThirdCycle from "./HeaderLowerThirdCycle";
 
 const ROBINSON_LOGO =
   "https://customer-assets.emergentagent.com/job_match-hub-tv/artifacts/mbo5fkxu_channels4_profile.jpg";
@@ -29,7 +30,17 @@ const LogoMark = ({ onClick, isFullscreen }) => (
   </button>
 );
 
-export const Header = ({ refreshKey, slideDurationMs, onLogoClick, isFullscreen, lastUpdatedAt, referenceDate }) => {
+export const Header = ({
+  refreshKey,
+  slideDurationMs,
+  onLogoClick,
+  isFullscreen,
+  lastUpdatedAt,
+  referenceDate,
+  lowerThirds,
+  ltCycleMs,
+  currentScreen,
+}) => {
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -67,6 +78,15 @@ export const Header = ({ refreshKey, slideDurationMs, onLogoClick, isFullscreen,
             />
           </span>
         </div>
+      </div>
+
+      {/* Header ticker – cycles admin-driven banners */}
+      <div className="mx-12 flex flex-1 items-center justify-center">
+        <HeaderLowerThirdCycle
+          items={lowerThirds}
+          currentScreen={currentScreen}
+          cycleDurationMs={ltCycleMs}
+        />
       </div>
 
       <div className="flex items-center gap-10">

@@ -1,0 +1,183 @@
+/* HeaderLowerThird – slim ticker between the JANDIA ARENA logo and the clock.
+   Fits within the header height (~80px); no scrollbars, no layout shift. */
+
+.hlt {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 22px;
+  height: 64px;
+  padding: 0 26px;
+  border-radius: 4px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(10, 17, 40, 0.92) 0%,
+      rgba(18, 32, 78, 0.88) 60%,
+      rgba(10, 17, 40, 0.92) 100%
+    );
+  border: 1px solid rgba(120, 170, 255, 0.25);
+  box-shadow:
+    0 6px 24px rgba(0, 0, 0, 0.45),
+    0 0 24px rgba(56, 110, 220, 0.18),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+  backdrop-filter: blur(6px);
+  max-width: 100%;
+  min-width: 360px;
+}
+
+.hlt::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.35) 50%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+/* Enter / exit animations – swap cleanly on every cycle */
+.hlt--in {
+  animation: hlt-in 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hlt--out {
+  animation: hlt-out 400ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+@keyframes hlt-in {
+  0%   { opacity: 0; transform: translateY(-12px); }
+  60%  { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes hlt-out {
+  0%   { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(8px); }
+}
+
+/* Label box */
+.hlt__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 3px;
+  font-family: "Cera ROB", "Inter", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(120, 170, 255, 0.3);
+  color: #cfe1ff;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.hlt__dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff3344;
+  box-shadow: 0 0 10px rgba(255, 51, 68, 0.85);
+  animation: hlt-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes hlt-pulse {
+  0%, 100% { opacity: 1;    transform: scale(1); }
+  50%      { opacity: 0.45; transform: scale(0.78); }
+}
+
+/* Divider */
+.hlt__divider {
+  width: 1.5px;
+  height: 34px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(120, 170, 255, 0.55) 30%,
+    rgba(120, 170, 255, 0.55) 70%,
+    transparent
+  );
+  flex-shrink: 0;
+}
+
+/* Text */
+.hlt__text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.hlt__title {
+  font-family: "Cera ROB", "Inter", system-ui, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #ffffff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hlt__subtitle {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.2;
+  color: #b9cbe9;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Shine sweep */
+.hlt__shine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -40%;
+  width: 30%;
+  background: linear-gradient(
+    120deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
+  transform: skewX(-18deg);
+  animation: hlt-shine 8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes hlt-shine {
+  0%   { left: -40%; opacity: 0; }
+  35%  { opacity: 1; }
+  60%  { left: 110%; opacity: 0; }
+  100% { left: 110%; opacity: 0; }
+}
+
+/* Variant accents */
+.hlt.hlt-live      .hlt__label { background: rgba(255, 51, 68, 0.14); border-color: rgba(255, 80, 95, 0.55); color: #ffdde0; }
+.hlt.hlt-live                  { border-color: rgba(255, 80, 95, 0.35); box-shadow: 0 6px 24px rgba(0,0,0,0.45), 0 0 24px rgba(255, 60, 80, 0.22); }
+.hlt.hlt-studio    .hlt__label { background: rgba(96, 165, 250, 0.10); border-color: rgba(96, 165, 250, 0.45); color: #e6f0ff; }
+.hlt.hlt-preview   .hlt__label { background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.5);  color: #e0f4ff; }
+.hlt.hlt-halftime  .hlt__label { background: rgba(245, 158, 11, 0.14); border-color: rgba(245, 158, 11, 0.5);  color: #fde8c4; }
+.hlt.hlt-analysis  .hlt__label { background: rgba(167, 139, 250, 0.14); border-color: rgba(167, 139, 250, 0.5); color: #ece4ff; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hlt--in, .hlt--out, .hlt__dot, .hlt__shine {
+    animation: none !important;
+  }
+}

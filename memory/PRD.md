@@ -60,6 +60,15 @@ Create a 16:9 TV dashboard web app for "JANDIA ARENA". The app will be displayed
 - [x] Group Tables Screen handhabt 12 WM-2026-Gruppen (4×3 Compact-Layout) – Echtdaten von Football-Data.org
 - [x] Match-Screens fallen automatisch auf Demo-Daten zurück solange WM 2026 noch nicht gestartet hat
 
+## Iteration 6 (2026-05-25) – Header-Ticker Slot
+- [x] Lower Thirds bekommen `slot`-Feld: `header` (Default, schmaler Banner zwischen Logo und Uhr) oder `stage` (klassischer Lower Third unten, frei drag-bar)
+- [x] Neue Komponente `HeaderLowerThird` (~64px hoch, slim) + `HeaderLowerThirdCycle`
+- [x] Header.jsx: Ticker zwischen JANDIA-ARENA-Logo und Uhrzeit/Datum
+- [x] Admin-Dialog: „Position im Dashboard" Select (Header/Stage); Slot-Badge in der Liste
+- [x] Live-Editor zeigt nur `stage`-Items zum Positionieren (Header-Hinweis falls leer)
+- [x] Backend `_validate` prüft Slot; meta liefert Slot-Liste auf Deutsch
+- [x] Seed-Defaults: 3 Header-Banner (Public Viewing aktiv, Happy Hour + Anstoss inaktiv als Beispiele)
+
 ## Iteration 5 (2026-05-25) – Lower Thirds + Admin
 - [x] **StudioLowerThird** wiederverwendbare Komponente (label, title, subtitle, variant, visible, position, positionX, positionY, draggable)
 - [x] 5 Varianten: live (pulsing red dot), studio, preview, halftime, analysis
