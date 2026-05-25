@@ -13,10 +13,13 @@ import {
   fetchSchedule,
   fetchGroups,
   fetchNow,
+  fetchLowerThirds,
+  fetchLowerThirdsSettings,
   FALLBACK_MATCHES,
   FALLBACK_GROUPS,
 } from "../lib/api";
 import { getTodayGermanyMatch } from "../lib/germany";
+import LowerThirdAutoCycle from "../components/LowerThirdAutoCycle";
 
 const REFRESH_MS = 60000;
 
@@ -61,14 +64,18 @@ export default function Dashboard() {
   const [screenIdx, setScreenIdx] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [lowerThirds, setLowerThirds] = useState([]);
+  const [ltCycleMs, setLtCycleMs] = useState(25000);
 
   const load = useCallback(async () => {
     try {
-      const [matches, sched, grps, now] = await Promise.all([
+      const [matches, sched, grps, now, lts, ltSettings] = await Promise.all([
         fetchAllMatches(),
         fetchSchedule().catch(() => []),
         fetchGroups(),
         fetchNow().catch(() => null),
+        fetchLowerThirds().catch(() => []),
+        fetchLowerThirdsSettings().catch(() => null),
       ]);
       if (Array.isArray(matches) && matches.length > 0) {
         setAllMatches(matches);
@@ -82,6 +89,8 @@ export default function Dashboard() {
         setGroups(FALLBACK_GROUPS);
       }
       if (now?.date) setReferenceDate(now.date);
+      if (Array.isArray(lts)) setLowerThirds(lts);
+      if (ltSettings?.cycle_duration_ms) setLtCycleMs(ltSettings.cycle_duration_ms);
     } catch (e) {
       console.warn("Falling back to demo data:", e?.message);
       setAllMatches(FALLBACK_MATCHES);
@@ -212,6 +221,13 @@ export default function Dashboard() {
               <GroupTables key="groups" groups={groups} />
             )}
           </AnimatePresence>
+
+          {/* Admin-driven Lower Third auto-cycle (per current screen) */}
+          <LowerThirdAutoCycle
+            items={lowerThirds}
+            currentScreen={current}
+            cycleDurationMs={ltCycleMs}
+          />
         </main>
 
         {/* Footer: screen indicator only */}

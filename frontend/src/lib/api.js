@@ -28,6 +28,42 @@ export async function fetchSource() {
   return res.data;
 }
 
+// ---- Lower Thirds (admin-driven cycle) ----
+export async function fetchLowerThirds() {
+  const res = await axios.get(`${API}/lower-thirds`);
+  return res.data;
+}
+
+export async function fetchLowerThirdsSettings() {
+  const res = await axios.get(`${API}/lower-thirds/settings`);
+  return res.data;
+}
+
+export async function fetchLowerThirdsMeta() {
+  const res = await axios.get(`${API}/lower-thirds/meta`);
+  return res.data;
+}
+
+export async function createLowerThird(payload) {
+  const res = await axios.post(`${API}/lower-thirds`, payload);
+  return res.data;
+}
+
+export async function updateLowerThird(id, payload) {
+  const res = await axios.put(`${API}/lower-thirds/${id}`, payload);
+  return res.data;
+}
+
+export async function deleteLowerThird(id) {
+  const res = await axios.delete(`${API}/lower-thirds/${id}`);
+  return res.data;
+}
+
+export async function updateLowerThirdsSettings(payload) {
+  const res = await axios.put(`${API}/lower-thirds/settings`, payload);
+  return res.data;
+}
+
 // In-memory demo fallback (used when backend is unreachable)
 const _mkIso = (offsetMin) =>
   new Date(Date.now() + offsetMin * 60 * 1000).toISOString();

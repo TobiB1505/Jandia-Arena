@@ -10,6 +10,7 @@ from typing import List, Optional
 from datetime import datetime, timedelta, timezone
 
 import football_api
+import lower_thirds as lower_thirds_module
 
 
 ROOT_DIR = Path(__file__).parent
@@ -481,6 +482,15 @@ async def get_schedule():
 
 
 app.include_router(api_router)
+app.include_router(lower_thirds_module.router)
+
+
+@app.on_event("startup")
+async def _seed_lower_thirds():
+    try:
+        await lower_thirds_module.seed_defaults_if_empty()
+    except Exception as e:
+        logging.getLogger(__name__).warning("Lower Thirds seed failed: %s", e)
 
 app.add_middleware(
     CORSMiddleware,

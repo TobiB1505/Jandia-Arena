@@ -1,0 +1,44 @@
+{
+  "summary": "Completed full backend + frontend testing for the Lower Thirds admin extension. Found and FIXED a critical route-ordering bug in /app/backend/lower_thirds.py: PUT /api/lower-thirds/settings was being matched by the more general PUT /{item_id} route (defined earlier), causing 422 'title field required' errors from the LowerThirdInput model. Moved /settings GET+PUT routes BEFORE the /{item_id} routes. After the fix, all 11 backend tests pass (100%) and full admin CRUD + dashboard auto-cycle flows work end-to-end.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Admin Dialogs", "issues": ["React a11y warning: 'Missing Description or aria-describedby={undefined} for DialogContent' on both the create/edit dialog and the delete-confirm dialog. Non-blocking; add a <DialogDescription> or aria-describedby to silence and improve accessibility."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_lower_thirds.py",
+    "/app/test_reports/pytest/lower_thirds_results.xml"
+  ],
+  "action_items": [
+    "(OPTIONAL) Add <DialogDescription> to ItemDialog and the delete-confirm Dialog in Admin.jsx to clear the React a11y warning.",
+    "(OPTIONAL) Refactor lower_thirds.py to avoid the route-ordering footgun: prefer explicit non-parametric paths before parametric ones, or use a regex constraint like '/{item_id:str}' that excludes 'settings'.",
+    "(OPTIONAL) The Lower-Thirds default seed for the 'germany' screen only renders when Germany is actually playing today (Dashboard inserts 'germany' screen conditionally on germanyMatch). With the current SIMULATE_DATE / API data (Mexico-vs-Südafrika today) Germany screen is NOT in the rotation, so the 'Deutschland im Fokus' lower-third can't be seen by default. This is correct per Dashboard.jsx logic but worth documenting for stakeholders."
+  ],
+  "critical_code_review_comments": [
+    "BUG FIXED in /app/backend/lower_thirds.py: PUT '/settings' was unreachable because PUT '/{item_id}' was registered first. FastAPI matches in registration order, so /settings was being routed to update_item('settings', ...) and Pydantic rejected the payload (missing 'title'). Moved /settings routes above /{item_id} routes.",
+    "Same risk exists elsewhere when adding new parametric endpoints — recommend adopting a convention: literal-path routes ALWAYS before parametric routes within a router.",
+    "LowerThirdAutoCycle uses window.__lt_swap as a global to track the swap timeout — works but leaks state to the window object. A useRef would be cleaner.",
+    "Admin.jsx ItemDialog: the toggle-active-{id} action calls updateLowerThird with {...item, active} but `item` already contains an id field; backend update_item Pydantic model ignores it via LowerThirdInput (no id), so this is fine in practice.",
+    "Backend uses uuid string ids consistently and excludes _id ({'_id': 0}) in find queries — clean.",
+    "Seed-on-startup is idempotent (count==0 guard) and verified via repeated GET — list size stable across calls.",
+    "Frontend correctly uses process.env.REACT_APP_BACKEND_URL for all calls; no hardcoded URLs.",
+    "All required data-testids present on Admin: lower-thirds-list, cycle-duration-input, cycle-duration-save, add-lower-third-btn, title/subtitle/label/order-input, variant-select, active-switch, screen-check-{id}, dialog-save-btn, edit-{id}, delete-{id}, toggle-active-{id}, delete-confirm-btn. Dashboard exposes auto-cycle-lower-third."
+  ],
+  "updated_files": [
+    "/app/backend/lower_thirds.py",
+    "/app/backend/tests/test_lower_thirds.py"
+  ],
+  "success_rate": {"backend": "100% (11/11)", "frontend": "100%"},
+  "test_credentials": "N/A — admin has no auth (secret URL /admin per user choice 1a)",
+  "seed_data_creation": "Tests create and clean up TEST_-prefixed items via the API; no residual state. Default 3-item seed remains untouched.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend tests at /app/backend/tests/test_lower_thirds.py (pytest, 11 tests: meta/list/seed/CRUD-roundtrip/404/400-variant/400-screen/settings GET+PUT+too-low). Existing match tests at /app/backend/tests/test_matches.py continue to pass. The dashboard auto-cycle was verified end-to-end by creating 2 active items via the API targeting today+next, observing BOTH titles cycle through the auto-cycle-lower-third testid in the live UI, then cleaning up. With default seed and Germany not playing today, no lower third renders — verified as correct (negative test). Note: dashboard no longer exposes per-screen testids like 'screen-today'; only 'screen-indicator' container.",
+  "rca of the issue": "Original PUT /api/lower-thirds/settings returned 422 'title field required' because route order in lower_thirds.py registered PUT '/{item_id}' BEFORE PUT '/settings'. FastAPI matches routes in registration order — '/settings' matched the parametric route with item_id='settings', so the request body was validated against LowerThirdInput (which requires 'title') instead of LowerThirdSettings. Reproduction: curl -X PUT $URL/api/lower-thirds/settings -H 'Content-Type: application/json' -d '{\"cycle_duration_ms\":8000}' returned HTTP 422 with detail[0].loc=['body','title']. Mitigation: reordered the routes so /settings GET+PUT are registered before /{item_id} GET+PUT+DELETE. Now PUT /settings returns 200 with the updated value, and PUT /settings {cycle_duration_ms:1000} correctly returns 400 'Mindestdauer 3000 ms'."
+}

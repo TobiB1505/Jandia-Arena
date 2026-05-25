@@ -1,7 +1,6 @@
 import ScreenFrame from "../components/ScreenFrame";
 import Flag from "../components/Flag";
 import StatusBadge from "../components/StatusBadge";
-import StudioLowerThird from "../components/StudioLowerThird";
 import { germanySide } from "../lib/germany";
 
 const TeamBlock = ({ team, accent = false, testId }) => (
@@ -120,15 +119,6 @@ export const GermanyPublicViewing = ({ match }) => {
         {/* Spacer pushes the bottom edge down so the lower-third sits cleanly */}
         <div className="mt-auto" />
       </div>
-
-      {/* Broadcast-style lower third pinned to the visible bottom of the stage */}
-      <StudioLowerThird
-        variant="preview"
-        label="VORSCHAU"
-        title="Deutschland im Fokus"
-        subtitle="Public Viewing heute in der Jandia Arena"
-        testId="germany-lower-third"
-      />
     </ScreenFrame>
   );
 };
