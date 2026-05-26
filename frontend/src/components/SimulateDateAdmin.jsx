@@ -20,6 +20,7 @@ import {
   setSimulateDate,
   enableLiveMode,
   resetSimulateDate,
+  triggerGoalTest,
 } from "../lib/api";
 
 const SOURCE_LABELS = {
@@ -101,6 +102,16 @@ export default function SimulateDateAdmin() {
       toast.error("Zurücksetzen fehlgeschlagen.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleGoalTest = async () => {
+    try {
+      await triggerGoalTest();
+      toast.success("Goal-Animation wird auf allen TVs ausgelöst.");
+    } catch (e) {
+      console.error(e);
+      toast.error("Trigger fehlgeschlagen.");
     }
   };
 
@@ -240,6 +251,20 @@ export default function SimulateDateAdmin() {
                 Override entfernen (Fallback .env)
               </Button>
             )}
+
+            <div className="ml-auto flex items-center gap-3 border-l border-blue-400/10 pl-4">
+              <span className="text-xs uppercase tracking-widest text-blue-300/60">
+                QA
+              </span>
+              <Button
+                variant="outline"
+                onClick={handleGoalTest}
+                className="border-amber-400/40 bg-amber-500/10 text-amber-200 hover:bg-amber-500/20"
+                data-testid="goal-test-trigger"
+              >
+                Goal-Animation testen
+              </Button>
+            </div>
           </div>
         </div>
       </CardContent>

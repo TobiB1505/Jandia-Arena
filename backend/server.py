@@ -390,14 +390,32 @@ async def _resolve_matches_all() -> tuple[List[Match], str]:
 
 @api_router.get("/now")
 async def get_now():
-    """Returns the dashboard's reference time (real or simulated)."""
+    """Returns the dashboard's reference time (real or simulated).
+
+    `goal_test_at` is bumped by /api/admin/goal-test and lets the dashboard
+    fire the Deutschland goal-celebration overlay on demand for QA.
+    """
     n = _now()
     sim = _effective_simulate_date()
     return {
         "iso": n.isoformat(),
         "date": n.strftime("%Y-%m-%d"),
         "simulated": bool(sim),
+        "goal_test_at": _signals["goal_test_at"],
     }
+
+
+# ---------- Runtime signals (admin → dashboard one-shot triggers) ----------
+_signals: dict = {"goal_test_at": None}
+
+
+@api_router.post("/admin/goal-test")
+async def trigger_goal_test():
+    """Bump the goal-test timestamp. The dashboard polls /api/now and will
+    show the Deutschland goal animation once when this changes."""
+    ts = datetime.now(timezone.utc).isoformat()
+    _signals["goal_test_at"] = ts
+    return {"ok": True, "goal_test_at": ts}
 
 
 # ---------- Runtime settings: simulate-date toggle ----------

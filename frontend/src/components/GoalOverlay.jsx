@@ -9,16 +9,22 @@ import { germanySide } from "../lib/germany";
  * Strictly opt-in: the parent only mounts this component while the
  * Deutschland-Public-Viewing slide is active AND the match is live, so it can
  * never trigger on any other screen or match.
+ *
+ * `testTriggerKey` is an optional admin-driven counter. When it changes the
+ * overlay fires once with a synthetic scoreline – used by the admin
+ * "Goal-Animation testen" button. Match data is not required in test mode.
  */
 const HOLD_MS = 4000;
 
-export default function GoalOverlay({ match }) {
+export default function GoalOverlay({ match, testTriggerKey = 0 }) {
   const [show, setShow] = useState(false);
   const [scorelineSnapshot, setScorelineSnapshot] = useState(null);
   const prevGoalsRef = useRef(null);
   const timerRef = useRef(null);
   const armedRef = useRef(false); // prevents the first read from firing
+  const prevTestKeyRef = useRef(testTriggerKey);
 
+  // Real Germany goal detection
   useEffect(() => {
     if (!match) return;
     const side = germanySide(match);
@@ -28,7 +34,6 @@ export default function GoalOverlay({ match }) {
     const opponentGoals =
       side === "home" ? match.away_score : match.home_score;
 
-    // Only count numbers – ignore null/undefined from "scheduled" state.
     if (typeof germanyGoals !== "number") {
       prevGoalsRef.current = null;
       armedRef.current = false;
@@ -39,8 +44,6 @@ export default function GoalOverlay({ match }) {
     prevGoalsRef.current = germanyGoals;
 
     if (!armedRef.current) {
-      // First time we see a numeric score (kickoff). Don't celebrate the
-      // initial 0-0 or a score the match already had when the slide loaded.
       armedRef.current = true;
       return;
     }
@@ -57,6 +60,21 @@ export default function GoalOverlay({ match }) {
       timerRef.current = setTimeout(() => setShow(false), HOLD_MS);
     }
   }, [match?.home_score, match?.away_score, match?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Admin test trigger – fires once when testTriggerKey changes.
+  useEffect(() => {
+    if (testTriggerKey === prevTestKeyRef.current) return;
+    prevTestKeyRef.current = testTriggerKey;
+    if (testTriggerKey === 0) return; // initial mount, ignore
+    setScorelineSnapshot({
+      germany: 1,
+      opponent: 0,
+      opponentName: "Test-Modus",
+    });
+    setShow(true);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setShow(false), HOLD_MS);
+  }, [testTriggerKey]);
 
   useEffect(() => {
     return () => {

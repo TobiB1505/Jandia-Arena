@@ -39,6 +39,11 @@ export async function resetSimulateDate() {
   return res.data;
 }
 
+export async function triggerGoalTest() {
+  const res = await axios.post(`${API}/admin/goal-test`);
+  return res.data;
+}
+
 export async function fetchGroups() {
   const res = await axios.get(`${API}/groups`);
   return res.data;

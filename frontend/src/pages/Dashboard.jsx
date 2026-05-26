@@ -83,6 +83,11 @@ export default function Dashboard() {
   const [lowerThirds, setLowerThirds] = useState([]);
   const [ltCycleMs, setLtCycleMs] = useState(25000);
   const [experts, setExperts] = useState([]);
+  // Admin "Test Goal-Animation" trigger – incremented when /api/now reports
+  // a new goal_test_at timestamp. The GoalOverlay watches this and fires a
+  // synthetic celebration once per change.
+  const [goalTestKey, setGoalTestKey] = useState(0);
+  const lastGoalTestAtRef = useRef(null);
 
   // Allow the admin preview iframe to embed the dashboard without the
   // lower-third overlay (so the editor can draw its own draggable overlay
@@ -119,6 +124,13 @@ export default function Dashboard() {
       if (now?.date) setReferenceDate(now.date);
       if (now?.iso) {
         setServerClock({ iso: now.iso, fetchedAt: Date.now() });
+      }
+      if (now?.goal_test_at && now.goal_test_at !== lastGoalTestAtRef.current) {
+        // First poll just snapshots the value; subsequent changes trigger.
+        if (lastGoalTestAtRef.current !== null) {
+          setGoalTestKey((k) => k + 1);
+        }
+        lastGoalTestAtRef.current = now.goal_test_at;
       }
       if (Array.isArray(lts)) setLowerThirds(lts);
       if (ltSettings?.cycle_duration_ms) setLtCycleMs(ltSettings.cycle_duration_ms);
@@ -326,13 +338,21 @@ export default function Dashboard() {
             />
           )}
 
-          {/* Goal celebration – strictly opt-in:
-              only on the Deutschland-Public-Viewing slide and only while
-              the Germany match is in live-lock. Triggers when Germany
-              scores. Cannot fire on any other screen or for any other team. */}
-          {current === "germany" && germanyLive && germanyMatch && (
-            <GoalOverlay match={germanyMatch} />
-          )}
+          {/* Goal celebration – two trigger paths:
+              1) Real Germany goal during live-lock (only fires when
+                 current === "germany" + germanyLive + score increase)
+              2) Admin "Goal-Animation testen" button bumps goalTestKey;
+                 in test mode it fires on any screen.
+              Always mounted so the prev-ref initialises at 0 from the
+              start, otherwise the first admin trigger would silently
+              de-dupe against an already-matching initial value. The
+              component renders null until one of the triggers fires. */}
+          <GoalOverlay
+            match={
+              current === "germany" && germanyLive ? germanyMatch : null
+            }
+            testTriggerKey={goalTestKey}
+          />
         </main>
 
         {/* Footer: screen indicator only */}
