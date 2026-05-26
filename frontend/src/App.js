@@ -1,4 +1,5 @@
 import "@/App.css";
+import "./lib/auth"; // installs global axios interceptors
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
 import Dashboard from "./pages/Dashboard";

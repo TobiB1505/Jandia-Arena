@@ -19,9 +19,12 @@ API = f"{BASE_URL}/api/lower-thirds"
 
 
 @pytest.fixture(scope="module")
-def session():
+def session(admin_token):
     s = requests.Session()
-    s.headers.update({"Content-Type": "application/json"})
+    s.headers.update({
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {admin_token}",
+    })
     return s
 
 
@@ -34,7 +37,7 @@ def test_meta_returns_german_lists(session):
     variant_ids = {v["id"] for v in data["variants"]}
     assert variant_ids == {"live", "studio", "preview", "halftime", "analysis"}
     screen_ids = {s["id"] for s in data["screens"]}
-    assert screen_ids == {"today", "next", "germany", "tomorrow", "schedule", "groups"}
+    assert screen_ids == {"today", "next", "germany", "tomorrow", "schedule", "groups", "experts"}
     # German labels (spot-check)
     labels = {s["id"]: s["label"] for s in data["screens"]}
     assert labels["today"] == "Heute"

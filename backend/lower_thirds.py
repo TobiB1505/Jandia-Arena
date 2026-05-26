@@ -12,9 +12,11 @@ from pathlib import Path
 from typing import List, Optional
 
 from dotenv import load_dotenv
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field
+
+import auth
 
 # Ensure .env is loaded even if this module is imported before server.py
 # finishes its own load_dotenv() call.
@@ -94,7 +96,7 @@ async def list_items():
     return [LowerThird(**d) for d in docs]
 
 
-@router.post("", response_model=LowerThird)
+@router.post("", response_model=LowerThird, dependencies=[Depends(auth.require_admin)])
 async def create_item(payload: LowerThirdInput):
     _validate(payload.variant, payload.screens, payload.slot)
     item = LowerThird(**payload.model_dump())
@@ -110,7 +112,7 @@ async def get_settings():
     return LowerThirdSettings(cycle_duration_ms=int(doc.get("cycle_duration_ms", 25000)))
 
 
-@router.put("/settings", response_model=LowerThirdSettings)
+@router.put("/settings", response_model=LowerThirdSettings, dependencies=[Depends(auth.require_admin)])
 async def update_settings(payload: LowerThirdSettings):
     if payload.cycle_duration_ms < 3000:
         raise HTTPException(400, "Mindestdauer 3000 ms")
@@ -122,7 +124,7 @@ async def update_settings(payload: LowerThirdSettings):
     return payload
 
 
-@router.put("/{item_id}", response_model=LowerThird)
+@router.put("/{item_id}", response_model=LowerThird, dependencies=[Depends(auth.require_admin)])
 async def update_item(item_id: str, payload: LowerThirdInput):
     _validate(payload.variant, payload.screens, payload.slot)
     existing = await _items_col.find_one({"id": item_id}, {"_id": 0})
@@ -133,7 +135,7 @@ async def update_item(item_id: str, payload: LowerThirdInput):
     return updated
 
 
-@router.delete("/{item_id}")
+@router.delete("/{item_id}", dependencies=[Depends(auth.require_admin)])
 async def delete_item(item_id: str):
     res = await _items_col.delete_one({"id": item_id})
     if res.deleted_count == 0:
@@ -146,7 +148,7 @@ class PositionInput(BaseModel):
     position_y: Optional[int] = None
 
 
-@router.patch("/{item_id}/position", response_model=LowerThird)
+@router.patch("/{item_id}/position", response_model=LowerThird, dependencies=[Depends(auth.require_admin)])
 async def patch_position(item_id: str, payload: PositionInput):
     """Lightweight endpoint used by the admin drag-and-drop editor.
 
@@ -187,7 +189,7 @@ class ActiveInput(BaseModel):
     active: bool
 
 
-@router.patch("/{item_id}/active", response_model=LowerThird)
+@router.patch("/{item_id}/active", response_model=LowerThird, dependencies=[Depends(auth.require_admin)])
 async def patch_active(item_id: str, payload: ActiveInput):
     """Lightweight toggle so the admin doesn't need to send the full payload."""
     existing = await _items_col.find_one({"id": item_id}, {"_id": 0})

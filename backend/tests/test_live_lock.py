@@ -37,9 +37,12 @@ API = f"{BASE}/api"
 
 
 @pytest.fixture(scope="module")
-def session():
+def session(admin_token):
     s = requests.Session()
-    s.headers.update({"Content-Type": "application/json"})
+    s.headers.update({
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {admin_token}",
+    })
     return s
 
 

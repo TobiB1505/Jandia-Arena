@@ -29,9 +29,11 @@ import {
 } from "../components/ui/dialog";
 import LowerThirdLiveEditor from "../components/LowerThirdLiveEditor";
 import ExpertsAdmin from "../components/ExpertsAdmin";
-import SimulateDateAdmin from "../components/SimulateDateAdmin";
+import SetupTab from "../components/SetupTab";
+import AdminLogin from "../components/AdminLogin";
 import LiveControlTab from "../components/LiveControlTab";
 import ScreensTab from "../components/ScreensTab";
+import { fetchAuthStatus, checkAuth, getToken, clearToken, onAuthLost } from "../lib/auth";
 import {
   fetchLowerThirds,
   fetchLowerThirdsSettings,
@@ -84,6 +86,7 @@ function useIsDesktop() {
 
 export default function Admin() {
   const isDesktop = useIsDesktop();
+  const [authState, setAuthState] = useState("checking"); // "checking" | "authed" | "locked"
   const [tab, setTab] = useState("live");
   const [items, setItems] = useState([]);
   const [meta, setMeta] = useState({ variants: [], screens: [] });
@@ -93,6 +96,37 @@ export default function Admin() {
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [previewScreen, setPreviewScreen] = useState("germany");
+
+  // Auth bootstrap: check whether auth is configured, then validate token
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const status = await fetchAuthStatus();
+        if (cancelled) return;
+        if (!status.configured) {
+          setAuthState("authed"); // dev mode – open access
+          return;
+        }
+        if (!getToken()) {
+          setAuthState("locked");
+          return;
+        }
+        try {
+          await checkAuth();
+          setAuthState("authed");
+        } catch {
+          clearToken();
+          setAuthState("locked");
+        }
+      } catch (e) {
+        console.error("auth status failed", e);
+        setAuthState("authed"); // fail-open so the UI is still usable if status endpoint is down
+      }
+    })();
+    onAuthLost(() => setAuthState("locked"));
+    return () => { cancelled = true; };
+  }, []);
 
   const refresh = async () => {
     const [list, settings, m] = await Promise.all([
@@ -106,8 +140,9 @@ export default function Admin() {
   };
 
   useEffect(() => {
+    if (authState !== "authed") return;
     refresh().catch((e) => toast.error("Laden fehlgeschlagen: " + e.message));
-  }, []);
+  }, [authState]);
 
   const saveDuration = async () => {
     setSavingDuration(true);
@@ -271,25 +306,7 @@ export default function Admin() {
     </div>
   );
 
-  const settingsBlock = (
-    <div className="space-y-6">
-      <SimulateDateAdmin />
-      <Card className="border-blue-400/20 bg-[#0c1430]">
-        <CardHeader>
-          <CardTitle className="text-blue-100 text-lg">System-Info</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2 text-sm text-blue-200">
-            <p>• Broadcast-Stage: 1920×1080 fix, automatisch skaliert</p>
-            <p>• API-Polling Normal-Modus: 60 s</p>
-            <p>• API-Polling Live-Modus (Deutschland-Spiel): 15 s</p>
-            <p>• Live-Control: SSE-Push (Fallback REST-Polling)</p>
-            <p>• Rate-Limit-Guard: max. 9 Calls / Minute</p>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  const settingsBlock = <SetupTab />;
 
   /* ---------- Dialogs (shared between layouts) ---------- */
 
@@ -337,6 +354,22 @@ export default function Admin() {
       </Dialog>
     </>
   );
+
+  /* ---------- Auth gate ---------- */
+
+  if (authState === "checking") {
+    return (
+      <div
+        className="min-h-screen bg-[#06091a] text-blue-200 flex items-center justify-center"
+        data-testid="admin-loading"
+      >
+        <span className="text-sm uppercase tracking-[0.3em]">Lade Regiezentrale…</span>
+      </div>
+    );
+  }
+  if (authState === "locked") {
+    return <AdminLogin onAuthed={() => setAuthState("authed")} />;
+  }
 
   /* ---------- Desktop layout (≥ lg) ---------- */
 

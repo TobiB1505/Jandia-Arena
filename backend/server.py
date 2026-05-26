@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, APIRouter, WebSocket, WebSocketDisconnect, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 import asyncio
 import json
@@ -15,6 +15,7 @@ from datetime import datetime, timedelta, timezone
 import football_api
 import lower_thirds as lower_thirds_module
 import experts as experts_module
+import auth
 
 
 ROOT_DIR = Path(__file__).parent
@@ -412,7 +413,37 @@ async def get_now():
 _signals: dict = {"goal_test_at": None}
 
 
-@api_router.post("/admin/goal-test")
+# ---------- Admin auth ----------
+class AdminLoginIn(BaseModel):
+    password: str
+
+
+@api_router.get("/admin/status")
+async def admin_status():
+    """Public endpoint – tells the frontend whether auth is required."""
+    return {"configured": auth.auth_configured()}
+
+
+@api_router.post("/admin/login")
+async def admin_login(body: AdminLoginIn):
+    if not auth.auth_configured():
+        # No password set in env → auth disabled. Return a noop token.
+        return {"token": "open", "expires_in": auth.TOKEN_TTL_SECONDS, "configured": False}
+    if not auth.check_password(body.password or ""):
+        raise HTTPException(status_code=401, detail="Falsches Passwort")
+    return {
+        "token": auth.issue_token(),
+        "expires_in": auth.TOKEN_TTL_SECONDS,
+        "configured": True,
+    }
+
+
+@api_router.get("/admin/me", dependencies=[Depends(auth.require_admin)])
+async def admin_me():
+    return {"ok": True, "configured": auth.auth_configured()}
+
+
+@api_router.post("/admin/goal-test", dependencies=[Depends(auth.require_admin)])
 async def trigger_goal_test():
     """Bump the goal-test timestamp. The dashboard polls /api/now and will
     show the Deutschland goal animation once when this changes."""
@@ -462,7 +493,7 @@ async def get_simulate_date():
     }
 
 
-@api_router.put("/settings/simulate-date")
+@api_router.put("/settings/simulate-date", dependencies=[Depends(auth.require_admin)])
 async def set_simulate_date(body: SimulateDateBody):
     """Set a simulated date as a runtime override (persists in Mongo)."""
     date_str = (body.date or "").strip()
@@ -480,7 +511,7 @@ async def set_simulate_date(body: SimulateDateBody):
     return await get_simulate_date()
 
 
-@api_router.post("/settings/simulate-date/live")
+@api_router.post("/settings/simulate-date/live", dependencies=[Depends(auth.require_admin)])
 async def enable_live_mode():
     """Switch off all simulation (overrides any env value). Real-time data only."""
     await db.runtime_settings.update_one(
@@ -493,7 +524,7 @@ async def enable_live_mode():
     return await get_simulate_date()
 
 
-@api_router.delete("/settings/simulate-date")
+@api_router.delete("/settings/simulate-date", dependencies=[Depends(auth.require_admin)])
 async def reset_simulate_date():
     """Remove the runtime override, falling back to the env-configured default."""
     await db.runtime_settings.delete_one({"_id": _RUNTIME_DOC_ID})
@@ -610,21 +641,21 @@ async def get_control_state():
     return _control_snapshot()
 
 
-@api_router.post("/control/rotation/pause")
+@api_router.post("/control/rotation/pause", dependencies=[Depends(auth.require_admin)])
 async def control_pause():
     _control_state["rotation_paused"] = True
     await _persist_control()
     return _control_snapshot()
 
 
-@api_router.post("/control/rotation/resume")
+@api_router.post("/control/rotation/resume", dependencies=[Depends(auth.require_admin)])
 async def control_resume():
     _control_state["rotation_paused"] = False
     await _persist_control()
     return _control_snapshot()
 
 
-@api_router.post("/control/screen/next")
+@api_router.post("/control/screen/next", dependencies=[Depends(auth.require_admin)])
 async def control_next():
     _control_state["forced_action"] = {
         "type": "next",
@@ -635,7 +666,7 @@ async def control_next():
     return _control_snapshot()
 
 
-@api_router.post("/control/screen/previous")
+@api_router.post("/control/screen/previous", dependencies=[Depends(auth.require_admin)])
 async def control_previous():
     _control_state["forced_action"] = {
         "type": "previous",
@@ -646,7 +677,7 @@ async def control_previous():
     return _control_snapshot()
 
 
-@api_router.post("/control/screen/show")
+@api_router.post("/control/screen/show", dependencies=[Depends(auth.require_admin)])
 async def control_show(body: ScreenBody):
     if body.screen not in ALLOWED_SCREENS:
         return {"ok": False, "error": "unknown_screen", "allowed": sorted(ALLOWED_SCREENS)}
@@ -659,7 +690,7 @@ async def control_show(body: ScreenBody):
     return _control_snapshot()
 
 
-@api_router.post("/control/screen/pin")
+@api_router.post("/control/screen/pin", dependencies=[Depends(auth.require_admin)])
 async def control_pin(body: ScreenBody):
     if body.screen not in ALLOWED_SCREENS:
         return {"ok": False, "error": "unknown_screen", "allowed": sorted(ALLOWED_SCREENS)}
@@ -668,21 +699,21 @@ async def control_pin(body: ScreenBody):
     return _control_snapshot()
 
 
-@api_router.post("/control/screen/unpin")
+@api_router.post("/control/screen/unpin", dependencies=[Depends(auth.require_admin)])
 async def control_unpin():
     _control_state["pinned_screen"] = None
     await _persist_control()
     return _control_snapshot()
 
 
-@api_router.post("/control/tv/reload")
+@api_router.post("/control/tv/reload", dependencies=[Depends(auth.require_admin)])
 async def control_reload():
     _control_state["reload_token"] = int(_control_state["reload_token"]) + 1
     await _persist_control()
     return _control_snapshot()
 
 
-@api_router.post("/control/overlays/hide")
+@api_router.post("/control/overlays/hide", dependencies=[Depends(auth.require_admin)])
 async def control_overlays(body: HideOverlaysBody):
     _control_state["hide_overlays"] = bool(body.hide)
     await _persist_control()

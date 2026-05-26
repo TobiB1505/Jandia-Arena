@@ -16,10 +16,12 @@ from typing import List, Optional
 
 import requests
 from dotenv import load_dotenv
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, HTTPException, UploadFile, Depends
 from fastapi.responses import Response
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field
+
+import auth
 
 load_dotenv(Path(__file__).parent / ".env")
 
@@ -139,7 +141,7 @@ async def list_experts():
     return [_serialize(d) for d in docs]
 
 
-@router.put("/{expert_id}", response_model=Expert)
+@router.put("/{expert_id}", response_model=Expert, dependencies=[Depends(auth.require_admin)])
 async def update_expert(expert_id: str, payload: ExpertUpdate):
     existing = await _col.find_one({"id": expert_id})
     if not existing:
@@ -157,7 +159,7 @@ async def update_expert(expert_id: str, payload: ExpertUpdate):
     return _serialize(existing)
 
 
-@router.post("/{expert_id}/image", response_model=Expert)
+@router.post("/{expert_id}/image", response_model=Expert, dependencies=[Depends(auth.require_admin)])
 async def upload_image(expert_id: str, file: UploadFile = File(...)):
     existing = await _col.find_one({"id": expert_id})
     if not existing:
@@ -209,7 +211,7 @@ async def upload_image(expert_id: str, file: UploadFile = File(...)):
     return _serialize(existing)
 
 
-@router.delete("/{expert_id}/image", response_model=Expert)
+@router.delete("/{expert_id}/image", response_model=Expert, dependencies=[Depends(auth.require_admin)])
 async def clear_image(expert_id: str):
     existing = await _col.find_one({"id": expert_id})
     if not existing:
