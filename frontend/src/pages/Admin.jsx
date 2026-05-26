@@ -62,13 +62,34 @@ const TABS = [
   { id: "settings", label: "Setup",    icon: "⚙" },
 ];
 
+function useIsDesktop() {
+  const [is, setIs] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia
+      ? window.matchMedia("(min-width: 1024px)").matches
+      : false
+  );
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const handler = (e) => setIs(e.matches);
+    if (mq.addEventListener) mq.addEventListener("change", handler);
+    else mq.addListener(handler);
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener("change", handler);
+      else mq.removeListener(handler);
+    };
+  }, []);
+  return is;
+}
+
 export default function Admin() {
+  const isDesktop = useIsDesktop();
   const [tab, setTab] = useState("live");
   const [items, setItems] = useState([]);
   const [meta, setMeta] = useState({ variants: [], screens: [] });
   const [duration, setDuration] = useState(25);
   const [savingDuration, setSavingDuration] = useState(false);
-  const [editing, setEditing] = useState(null); // null = closed, {} = new, {...} = edit
+  const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [previewScreen, setPreviewScreen] = useState("germany");
@@ -151,161 +172,129 @@ export default function Admin() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-[#06091a] pb-24 text-blue-50">
-      {/* Sticky mobile header */}
-      <header className="sticky top-0 z-40 border-b border-blue-400/15 bg-[#06091a]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-          <div>
-            <h1 className="text-lg font-bold leading-tight tracking-tight">
-              Jandia Arena
-            </h1>
-            <p className="text-[10px] uppercase tracking-[0.3em] text-blue-300/70">
-              Live-Regie
-            </p>
+  const onToggleActive = async (item, active) => {
+    try {
+      await patchLowerThirdActive(item.id, active);
+      await refresh();
+    } catch (e) {
+      toast.error("Update fehlgeschlagen: " + e.message);
+    }
+  };
+
+  /* ---------- Reusable sub-sections ---------- */
+
+  const lowerThirdsBlock = (
+    <div className="space-y-6">
+      <Card className="border-blue-400/20 bg-[#0c1430]">
+        <CardHeader>
+          <CardTitle className="text-blue-100 text-lg">Auto-Cycle</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="flex-1 min-w-[220px]">
+              <Label className="text-blue-200">
+                Cycle-Dauer pro Lower Third (Sekunden)
+              </Label>
+              <Input
+                type="number"
+                min={3}
+                value={duration}
+                onChange={(e) => setDuration(e.target.value)}
+                className="mt-2 h-12 bg-[#0a112a] text-white text-base"
+                data-testid="cycle-duration-input"
+              />
+              <p className="mt-1 text-xs text-blue-300/70">
+                Gilt pro Screen, der mehrere aktive Lower Thirds hat. Minimum 3 Sekunden.
+              </p>
+            </div>
+            <Button
+              onClick={saveDuration}
+              disabled={savingDuration}
+              data-testid="cycle-duration-save"
+              className="h-12 bg-blue-500 hover:bg-blue-400 text-base"
+            >
+              {savingDuration ? "Speichere…" : "Speichern"}
+            </Button>
           </div>
-          <a
-            href="/"
-            className="rounded-lg border border-blue-400/30 px-3 py-2 text-[11px] font-bold uppercase tracking-widest text-blue-200 hover:bg-white/5"
-            data-testid="admin-back"
+        </CardContent>
+      </Card>
+
+      <Card className="border-blue-400/20 bg-[#0c1430]">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-blue-100 text-lg">Lower Thirds</CardTitle>
+          <Button
+            onClick={() => setEditing({ ...EMPTY })}
+            data-testid="add-lower-third-btn"
+            className="h-10 bg-blue-500 hover:bg-blue-400"
           >
-            TV
-          </a>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-3xl px-4 py-5 space-y-6">
-        {/* === LIVE TAB === */}
-        {tab === "live" && <LiveControlTab />}
-
-        {/* === SCREENS TAB === */}
-        {tab === "screens" && <ScreensTab />}
-
-        {/* === LOWER THIRDS TAB === */}
-        {tab === "lt" && (
-          <div className="space-y-6">
-            {/* Auto-Cycle */}
-            <Card className="border-blue-400/20 bg-[#0c1430]">
-              <CardHeader>
-                <CardTitle className="text-blue-100 text-lg">Auto-Cycle</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div>
-                    <Label className="text-blue-200">
-                      Cycle-Dauer pro Lower Third (Sekunden)
-                    </Label>
-                    <Input
-                      type="number"
-                      min={3}
-                      value={duration}
-                      onChange={(e) => setDuration(e.target.value)}
-                      className="mt-2 h-12 bg-[#0a112a] text-white text-base"
-                      data-testid="cycle-duration-input"
-                    />
-                    <p className="mt-1 text-xs text-blue-300/70">
-                      Gilt pro Screen, der mehrere aktive Lower Thirds hat. Minimum 3 Sekunden.
-                    </p>
-                  </div>
-                  <Button
-                    onClick={saveDuration}
-                    disabled={savingDuration}
-                    data-testid="cycle-duration-save"
-                    className="h-12 w-full bg-blue-500 hover:bg-blue-400 text-base"
-                  >
-                    {savingDuration ? "Speichere…" : "Speichern"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Items list */}
-            <Card className="border-blue-400/20 bg-[#0c1430]">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                <CardTitle className="text-blue-100 text-lg">Lower Thirds</CardTitle>
-                <Button
-                  onClick={() => setEditing({ ...EMPTY })}
-                  data-testid="add-lower-third-btn"
-                  className="h-10 bg-blue-500 hover:bg-blue-400"
-                >
-                  + Neu
-                </Button>
-              </CardHeader>
-              <CardContent>
-                {items.length === 0 ? (
-                  <div className="rounded-md border border-dashed border-blue-400/30 px-4 py-8 text-center text-blue-300 text-sm">
-                    Noch keine Lower Thirds angelegt.
-                  </div>
-                ) : (
-                  <div className="space-y-3" data-testid="lower-thirds-list">
-                    {items.map((item) => (
-                      <ItemRow
-                        key={item.id}
-                        item={item}
-                        meta={meta}
-                        onEdit={() => setEditing({ ...item })}
-                        onDelete={() => setConfirmDelete(item)}
-                        onToggleActive={async (active) => {
-                          try {
-                            await patchLowerThirdActive(item.id, active);
-                            await refresh();
-                          } catch (e) {
-                            toast.error("Update fehlgeschlagen: " + e.message);
-                          }
-                        }}
-                      />
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Live preview / drag-and-drop editor */}
-            <Card className="border-blue-400/20 bg-[#0c1430]">
-              <CardHeader>
-                <CardTitle className="text-blue-100 text-lg">
-                  Live-Vorschau · Drag &amp; Drop
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <LowerThirdLiveEditor
-                  items={items}
+            + Neu
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {items.length === 0 ? (
+            <div className="rounded-md border border-dashed border-blue-400/30 px-4 py-8 text-center text-blue-300 text-sm">
+              Noch keine Lower Thirds angelegt.
+            </div>
+          ) : (
+            <div className="space-y-3" data-testid="lower-thirds-list">
+              {items.map((item) => (
+                <ItemRow
+                  key={item.id}
+                  item={item}
                   meta={meta}
-                  selectedScreen={previewScreen}
-                  onScreenChange={setPreviewScreen}
-                  onPersisted={refresh}
+                  onEdit={() => setEditing({ ...item })}
+                  onDelete={() => setConfirmDelete(item)}
+                  onToggleActive={(active) => onToggleActive(item, active)}
                 />
-              </CardContent>
-            </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-blue-400/20 bg-[#0c1430]">
+        <CardHeader>
+          <CardTitle className="text-blue-100 text-lg">
+            Live-Vorschau · Drag &amp; Drop
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <LowerThirdLiveEditor
+            items={items}
+            meta={meta}
+            selectedScreen={previewScreen}
+            onScreenChange={setPreviewScreen}
+            onPersisted={refresh}
+          />
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const settingsBlock = (
+    <div className="space-y-6">
+      <SimulateDateAdmin />
+      <Card className="border-blue-400/20 bg-[#0c1430]">
+        <CardHeader>
+          <CardTitle className="text-blue-100 text-lg">System-Info</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 text-sm text-blue-200">
+            <p>• Broadcast-Stage: 1920×1080 fix, automatisch skaliert</p>
+            <p>• API-Polling Normal-Modus: 60 s</p>
+            <p>• API-Polling Live-Modus (Deutschland-Spiel): 15 s</p>
+            <p>• Live-Control: SSE-Push (Fallback REST-Polling)</p>
+            <p>• Rate-Limit-Guard: max. 9 Calls / Minute</p>
           </div>
-        )}
+        </CardContent>
+      </Card>
+    </div>
+  );
 
-        {/* === EXPERTS TAB === */}
-        {tab === "experts" && <ExpertsAdmin />}
+  /* ---------- Dialogs (shared between layouts) ---------- */
 
-        {/* === SETTINGS TAB === */}
-        {tab === "settings" && (
-          <div className="space-y-6">
-            <SimulateDateAdmin />
-            <Card className="border-blue-400/20 bg-[#0c1430]">
-              <CardHeader>
-                <CardTitle className="text-blue-100 text-lg">System-Info</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm text-blue-200">
-                  <p>• Broadcast-Stage: 1920×1080 fix, automatisch skaliert</p>
-                  <p>• API-Polling Normal-Modus: 60 s</p>
-                  <p>• API-Polling Live-Modus (Deutschland-Spiel): 15 s</p>
-                  <p>• Live-Control-Polling: 3 s</p>
-                  <p>• Rate-Limit-Guard: max. 9 Calls / Minute</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-      </main>
-
-      {/* Edit dialog */}
+  const dialogs = (
+    <>
       <ItemDialog
         open={!!editing}
         meta={meta}
@@ -314,8 +303,6 @@ export default function Admin() {
         onClose={() => setEditing(null)}
         onSubmit={onSubmitItem}
       />
-
-      {/* Delete confirm */}
       <Dialog
         open={!!confirmDelete}
         onOpenChange={(o) => !o && setConfirmDelete(null)}
@@ -348,8 +335,106 @@ export default function Admin() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </>
+  );
 
-      {/* Sticky bottom navigation */}
+  /* ---------- Desktop layout (≥ lg) ---------- */
+
+  if (isDesktop) {
+    return (
+      <div
+        className="min-h-screen bg-[#06091a] text-blue-50"
+        data-testid="admin-desktop"
+      >
+        <header className="sticky top-0 z-40 border-b border-blue-400/15 bg-[#06091a]/95 backdrop-blur">
+          <div className="mx-auto flex max-w-[1600px] items-center justify-between px-8 py-4">
+            <div>
+              <h1 className="text-2xl font-bold leading-tight tracking-tight">
+                Jandia Arena · Regiezentrale
+              </h1>
+              <p className="text-[11px] uppercase tracking-[0.3em] text-blue-300/70">
+                Desktop-Steuerung
+              </p>
+            </div>
+            <a
+              href="/"
+              className="rounded-lg border border-blue-400/30 px-4 py-2 text-xs font-bold uppercase tracking-widest text-blue-200 hover:bg-white/5"
+              data-testid="admin-back"
+            >
+              Zur TV-Ansicht
+            </a>
+          </div>
+        </header>
+
+        <main className="mx-auto max-w-[1600px] px-8 py-8">
+          <div className="grid grid-cols-1 gap-8 xl:grid-cols-[420px_1fr]">
+            {/* Sticky live control rail */}
+            <aside
+              className="xl:sticky xl:top-24 xl:max-h-[calc(100vh-7rem)] xl:overflow-y-auto xl:pr-2"
+              data-testid="desktop-live-rail"
+            >
+              <LiveControlTab />
+            </aside>
+
+            {/* Scrollable main content */}
+            <section className="space-y-10" data-testid="desktop-main">
+              <SectionHeading title="Screens" subtitle="Reihenfolge, Dauer und Direkt-Steuerung der TV-Slides." />
+              <ScreensTab />
+
+              <SectionHeading title="Lower Thirds" subtitle="Banner-Inhalte, Cycle und Live-Positionierung." />
+              {lowerThirdsBlock}
+
+              <SectionHeading title="Experten" subtitle="Studio-Talk-Gäste und ihre Profilbilder." />
+              <ExpertsAdmin />
+
+              <SectionHeading title="Einstellungen" subtitle="Simuliertes Datum und System-Info." />
+              {settingsBlock}
+            </section>
+          </div>
+        </main>
+
+        {dialogs}
+      </div>
+    );
+  }
+
+  /* ---------- Mobile layout (< lg) ---------- */
+
+  return (
+    <div
+      className="min-h-screen bg-[#06091a] pb-24 text-blue-50"
+      data-testid="admin-mobile"
+    >
+      <header className="sticky top-0 z-40 border-b border-blue-400/15 bg-[#06091a]/95 backdrop-blur">
+        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
+          <div>
+            <h1 className="text-lg font-bold leading-tight tracking-tight">
+              Jandia Arena
+            </h1>
+            <p className="text-[10px] uppercase tracking-[0.3em] text-blue-300/70">
+              Live-Regie
+            </p>
+          </div>
+          <a
+            href="/"
+            className="rounded-lg border border-blue-400/30 px-3 py-2 text-[11px] font-bold uppercase tracking-widest text-blue-200 hover:bg-white/5"
+            data-testid="admin-back"
+          >
+            TV
+          </a>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-3xl px-4 py-5 space-y-6">
+        {tab === "live"     && <LiveControlTab />}
+        {tab === "screens"  && <ScreensTab />}
+        {tab === "lt"       && lowerThirdsBlock}
+        {tab === "experts"  && <ExpertsAdmin />}
+        {tab === "settings" && settingsBlock}
+      </main>
+
+      {dialogs}
+
       <nav
         className="fixed bottom-0 left-0 right-0 z-50 border-t border-blue-400/20 bg-[#06091a]/95 backdrop-blur"
         data-testid="admin-bottom-nav"
@@ -391,6 +476,19 @@ export default function Admin() {
   );
 }
 
+function SectionHeading({ title, subtitle }) {
+  return (
+    <div className="border-b border-blue-400/10 pb-3">
+      <h2 className="text-lg font-bold uppercase tracking-[0.2em] text-blue-100">
+        {title}
+      </h2>
+      {subtitle && (
+        <p className="mt-1 text-sm text-blue-300/70">{subtitle}</p>
+      )}
+    </div>
+  );
+}
+
 function ItemRow({ item, meta, onEdit, onDelete, onToggleActive }) {
   const screenLabel = (id) =>
     meta.screens.find((s) => s.id === id)?.label || id;
@@ -399,7 +497,6 @@ function ItemRow({ item, meta, onEdit, onDelete, onToggleActive }) {
       data-testid={`lower-third-row-${item.id}`}
       className="rounded-xl border border-blue-400/15 bg-[#0a112a] p-4 space-y-3"
     >
-      {/* Header chips */}
       <div className="flex flex-wrap items-center gap-2">
         <span className="rounded-md border border-blue-400/30 bg-blue-400/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-blue-200">
           {item.variant}
@@ -419,7 +516,6 @@ function ItemRow({ item, meta, onEdit, onDelete, onToggleActive }) {
         <span className="ml-auto text-[10px] text-blue-300/50">#{item.order}</span>
       </div>
 
-      {/* Title / subtitle */}
       <div>
         <div className="text-base font-semibold leading-snug text-white">
           {item.title}
@@ -429,7 +525,6 @@ function ItemRow({ item, meta, onEdit, onDelete, onToggleActive }) {
         ) : null}
       </div>
 
-      {/* Screen chips */}
       {item.screens.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {item.screens.map((s) => (
@@ -443,7 +538,6 @@ function ItemRow({ item, meta, onEdit, onDelete, onToggleActive }) {
         </div>
       )}
 
-      {/* Actions */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-blue-400/10 pt-3">
         <label
           className="flex select-none items-center gap-2 cursor-pointer"

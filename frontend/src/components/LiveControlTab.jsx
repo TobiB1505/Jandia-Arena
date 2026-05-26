@@ -95,15 +95,28 @@ export default function LiveControlTab() {
                 (isPinned ? ctrl.pinned_screen : "Rotation läuft")}
             </h2>
           </div>
-          <div
-            className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-widest ${
-              isPaused
-                ? "bg-amber-500/20 text-amber-200"
-                : "bg-emerald-500/20 text-emerald-300"
-            }`}
-            data-testid="live-status-badge"
-          >
-            {isPaused ? "Pausiert" : "LIVE"}
+          <div className="flex items-center gap-2">
+            <div
+              className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest ${
+                ctrl._sseConnected
+                  ? "bg-emerald-500/15 text-emerald-300 border border-emerald-400/30"
+                  : "bg-amber-500/15 text-amber-300 border border-amber-400/30"
+              }`}
+              data-testid="sse-connection-badge"
+              title={ctrl._sseConnected ? "Server-Sent Events aktiv" : "REST-Polling Fallback"}
+            >
+              {ctrl._sseConnected ? "● Push" : "↻ Poll"}
+            </div>
+            <div
+              className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-widest ${
+                isPaused
+                  ? "bg-amber-500/20 text-amber-200"
+                  : "bg-emerald-500/20 text-emerald-300"
+              }`}
+              data-testid="live-status-badge"
+            >
+              {isPaused ? "Pausiert" : "LIVE"}
+            </div>
           </div>
         </div>
 

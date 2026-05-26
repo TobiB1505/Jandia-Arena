@@ -95,6 +95,17 @@ Create a 16:9 TV dashboard web app for "JANDIA ARENA". The app will be displayed
 - Bundesliga-Übergangsmodus (BL1-API bis WM-Start)
 
 ## Backlog (P2)
+- Admin-URL-Schutz (ENV-Passwort vor `/admin`)
 - Sponsor/Hotel-Promo-Banner (3s zwischen Rotationen)
 - Stadium-specific theming
 - Multi-day schedule navigation
+
+## Iteration 7 (2026-05-26) – SSE-Fix + Responsive Admin
+- [x] **SSE-Verbindung gefixt**: `closedRef` wurde im React-StrictMode-Doppelmount nicht zurückgesetzt → EventSource konnte nicht neu öffnen. Lösung: `closedRef.current = false` am Anfang des Effect-Bodies.
+- [x] **Push/Poll-Indikator**: neuer Badge `[data-testid="sse-connection-badge"]` in der Live-Steuerung zeigt "● Push" (SSE aktiv) oder "↻ Poll" (Fallback).
+- [x] **Adaptives Polling**: Fallback-Polling läuft nur mit 3s wenn SSE down ist, sonst Keep-Alive 30s.
+- [x] **Admin responsiv**:
+  - Mobile (< 1024px): unverändertes Tab-Layout mit Bottom-Nav (Live/Screens/Lower Thirds/Experten/Setup).
+  - Desktop (≥ 1024px): 2-Spalten-Layout – Sticky Live-Steuerung links (420px) + scrollender Hauptbereich rechts mit Screens, Lower-Thirds (Auto-Cycle + Liste + Drag&Drop-Editor), Experten und Einstellungen.
+- [x] `useIsDesktop()` matchMedia-Hook für serverseitig-sicheren Layout-Switch (kein Double-Mount der Heavy Components).
+- [x] Backend-Pytests: 9/9 `test_control.py` grün.
