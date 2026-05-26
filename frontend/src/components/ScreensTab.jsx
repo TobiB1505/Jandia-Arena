@@ -1,11 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import {
-  fetchControlState,
-  controlShow,
-  controlPin,
-  controlUnpin,
-} from "../lib/api";
+import { controlShow, controlPin, controlUnpin } from "../lib/api";
+import useControlState from "../lib/useControlState";
 
 // These mirror SCREEN_DURATION_MS in Dashboard.jsx. Duration editing is
 // currently informational only – persisting per-screen overrides is a
@@ -21,26 +17,20 @@ const SCREENS = [
 ];
 
 export default function ScreensTab() {
-  const [ctrl, setCtrl] = useState(null);
-
-  const refresh = async () => {
-    try { setCtrl(await fetchControlState()); } catch { /* ignore */ }
-  };
-
-  useEffect(() => {
-    refresh();
-    const t = setInterval(refresh, 3000);
-    return () => clearInterval(t);
-  }, []);
+  const ctrl = useControlState();
+  const [busy, setBusy] = useState(false);
 
   const wrap = async (action, msg) => {
+    if (busy) return;
+    setBusy(true);
     try {
-      const c = await action();
-      setCtrl(c);
+      await action();
       if (msg) toast.success(msg);
     } catch (e) {
       console.error(e);
       toast.error("Aktion fehlgeschlagen");
+    } finally {
+      setBusy(false);
     }
   };
 

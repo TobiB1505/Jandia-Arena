@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
-  fetchControlState,
   controlPause,
   controlResume,
   controlNext,
@@ -15,6 +14,7 @@ import {
   fetchAllMatches,
   fetchSimulateDate,
 } from "../lib/api";
+import useControlState from "../lib/useControlState";
 import { getTodayGermanyMatch } from "../lib/germany";
 
 const SCREEN_DEFS = [
@@ -30,30 +30,29 @@ const SCREEN_DEFS = [
 const SCREEN_LABEL_BY_ID = Object.fromEntries(SCREEN_DEFS.map((s) => [s.id, s.label]));
 
 export default function LiveControlTab() {
-  const [ctrl, setCtrl] = useState(null);
+  const ctrl = useControlState();
   const [busy, setBusy] = useState(false);
   const [germanyAvailable, setGermanyAvailable] = useState(false);
   const [dateMode, setDateMode] = useState(null);
 
-  const refresh = async () => {
-    try {
-      const [c, matches, dm] = await Promise.all([
-        fetchControlState(),
-        fetchAllMatches().catch(() => []),
-        fetchSimulateDate().catch(() => null),
-      ]);
-      setCtrl(c);
-      const gMatch = getTodayGermanyMatch(matches || [], dm?.effective_date || null);
-      setGermanyAvailable(!!gMatch && gMatch.status !== "finished");
-      setDateMode(dm);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
+  // Periodically refresh the auxiliary data (matches list + date mode).
+  // Control state itself is pushed over WS by useControlState.
   useEffect(() => {
-    refresh();
-    const t = setInterval(refresh, 3000);
+    const refreshAux = async () => {
+      try {
+        const [matches, dm] = await Promise.all([
+          fetchAllMatches().catch(() => []),
+          fetchSimulateDate().catch(() => null),
+        ]);
+        const gMatch = getTodayGermanyMatch(matches || [], dm?.effective_date || null);
+        setGermanyAvailable(!!gMatch && gMatch.status !== "finished");
+        setDateMode(dm);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    refreshAux();
+    const t = setInterval(refreshAux, 15000);
     return () => clearInterval(t);
   }, []);
 
@@ -61,8 +60,7 @@ export default function LiveControlTab() {
     if (busy) return;
     setBusy(true);
     try {
-      const c = await action();
-      setCtrl(c);
+      await action();
       if (msg) toast.success(msg);
     } catch (e) {
       console.error(e);

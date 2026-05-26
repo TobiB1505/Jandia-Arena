@@ -397,46 +397,58 @@ function ItemRow({ item, meta, onEdit, onDelete, onToggleActive }) {
   return (
     <div
       data-testid={`lower-third-row-${item.id}`}
-      className="flex flex-wrap items-center justify-between gap-4 rounded-md border border-blue-400/15 bg-[#0a112a] px-4 py-3"
+      className="rounded-xl border border-blue-400/15 bg-[#0a112a] p-4 space-y-3"
     >
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="rounded-sm border border-blue-400/30 bg-blue-400/10 px-2 py-0.5 text-xs uppercase tracking-widest text-blue-200">
-            {item.variant}
-          </span>
-          <span
-            className={`rounded-sm px-2 py-0.5 text-xs uppercase tracking-widest ${
-              (item.slot || "header") === "header"
-                ? "border border-cyan-400/30 bg-cyan-400/10 text-cyan-100"
-                : "border border-amber-400/30 bg-amber-400/10 text-amber-100"
-            }`}
-          >
-            {(item.slot || "header") === "header" ? "Header" : "Stage"}
-          </span>
-          <span className="text-xs uppercase tracking-widest text-blue-300/70">
-            {item.label || "—"}
-          </span>
-          <span className="text-xs text-blue-300/50">· Reihenfolge {item.order}</span>
-        </div>
-        <div className="mt-1 truncate text-lg font-semibold text-white">
+      {/* Header chips */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="rounded-md border border-blue-400/30 bg-blue-400/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-blue-200">
+          {item.variant}
+        </span>
+        <span
+          className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${
+            (item.slot || "header") === "header"
+              ? "border border-cyan-400/30 bg-cyan-400/10 text-cyan-100"
+              : "border border-amber-400/30 bg-amber-400/10 text-amber-100"
+          }`}
+        >
+          {(item.slot || "header") === "header" ? "Header" : "Stage"}
+        </span>
+        <span className="text-[10px] uppercase tracking-widest text-blue-300/70">
+          {item.label || "—"}
+        </span>
+        <span className="ml-auto text-[10px] text-blue-300/50">#{item.order}</span>
+      </div>
+
+      {/* Title / subtitle */}
+      <div>
+        <div className="text-base font-semibold leading-snug text-white">
           {item.title}
         </div>
         {item.subtitle ? (
-          <div className="truncate text-sm text-blue-300">{item.subtitle}</div>
+          <div className="text-sm text-blue-300/80">{item.subtitle}</div>
         ) : null}
-        <div className="mt-1 flex flex-wrap gap-1">
+      </div>
+
+      {/* Screen chips */}
+      {item.screens.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
           {item.screens.map((s) => (
             <span
               key={s}
-              className="rounded-sm bg-white/5 px-2 py-0.5 text-xs text-blue-200"
+              className="rounded-md bg-white/5 px-2 py-0.5 text-[11px] text-blue-200"
             >
               {screenLabel(s)}
             </span>
           ))}
         </div>
-      </div>
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
+      )}
+
+      {/* Actions */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-blue-400/10 pt-3">
+        <label
+          className="flex select-none items-center gap-2 cursor-pointer"
+          data-testid={`toggle-active-label-${item.id}`}
+        >
           <Switch
             checked={item.active}
             onCheckedChange={onToggleActive}
@@ -444,30 +456,33 @@ function ItemRow({ item, meta, onEdit, onDelete, onToggleActive }) {
             className="h-7 w-12 data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-zinc-600"
           />
           <span
-            className={`min-w-[3.5rem] text-center text-xs font-bold uppercase tracking-widest ${
+            className={`text-xs font-bold uppercase tracking-widest ${
               item.active ? "text-emerald-300" : "text-zinc-400"
             }`}
           >
-            {item.active ? "AKTIV" : "AUS"}
+            {item.active ? "Aktiv" : "Aus"}
           </span>
+        </label>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onEdit}
+            className="h-9 border-blue-400/30 bg-transparent text-blue-100 hover:bg-white/5"
+            data-testid={`edit-${item.id}`}
+          >
+            Bearbeiten
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 border-rose-400/30 bg-transparent text-rose-300 hover:bg-rose-500/10"
+            onClick={onDelete}
+            data-testid={`delete-${item.id}`}
+          >
+            Löschen
+          </Button>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onEdit}
-          data-testid={`edit-${item.id}`}
-        >
-          Bearbeiten
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="text-red-300 hover:bg-red-500/10"
-          onClick={onDelete}
-          data-testid={`delete-${item.id}`}
-        >
-          Löschen
-        </Button>
       </div>
     </div>
   );
@@ -501,7 +516,7 @@ function ItemDialog({ open, initial, meta, saving, onClose, onSubmit }) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl border-blue-400/20 bg-[#0c1430] text-blue-50">
+      <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto border-blue-400/20 bg-[#0c1430] text-blue-50">
         <DialogHeader>
           <DialogTitle>
             {form.id ? "Lower Third bearbeiten" : "Neuer Lower Third"}

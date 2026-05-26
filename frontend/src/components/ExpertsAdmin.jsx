@@ -161,7 +161,7 @@ function ExpertRow({ expert, onChanged }) {
   return (
     <div
       data-testid={`expert-admin-row-${expert.id}`}
-      className="grid grid-cols-[140px_1fr_auto] gap-4 rounded-md border border-blue-400/15 bg-[#0a112a] p-4"
+      className="flex flex-col gap-4 rounded-xl border border-blue-400/15 bg-[#0a112a] p-4 sm:grid sm:grid-cols-[140px_1fr_auto]"
     >
       {/* Thumbnail */}
       <div
@@ -324,7 +324,7 @@ function ExpertRow({ expert, onChanged }) {
       </div>
 
       {/* Action column */}
-      <div className="flex w-44 flex-col gap-2">
+      <div className="flex flex-col gap-2 sm:w-44">
         <input
           ref={fileRef}
           type="file"

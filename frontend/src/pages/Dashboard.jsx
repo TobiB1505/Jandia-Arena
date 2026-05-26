@@ -17,7 +17,6 @@ import {
   fetchLowerThirds,
   fetchLowerThirdsSettings,
   fetchExperts,
-  fetchControlState,
   adaptExpert,
   FALLBACK_MATCHES,
   FALLBACK_GROUPS,
@@ -25,6 +24,7 @@ import {
 import { getTodayGermanyMatch } from "../lib/germany";
 import LowerThirdAutoCycle from "../components/LowerThirdAutoCycle";
 import GoalOverlay from "../components/GoalOverlay";
+import useControlState from "../lib/useControlState";
 
 const REFRESH_MS = 60000;
 // When a Germany match is in progress we poll significantly more often so
@@ -97,13 +97,17 @@ export default function Dashboard() {
   //   • forced_action    → one-shot show/next/previous, gated by token
   //   • reload_token     → window.location.reload()
   //   • hide_overlays    → suppress lower-thirds & studio overlay
-  const [ctrl, setCtrl] = useState({
+  // Live-control state pushed via WebSocket (with REST poll as fallback).
+  // See `useControlState` – the hook handles reconnects and keeps the UI
+  // fresh even when the socket is dropping in and out.
+  const wsCtrl = useControlState();
+  const ctrl = wsCtrl || {
     rotation_paused: false,
     pinned_screen: null,
     forced_action: null,
     reload_token: null,
     hide_overlays: false,
-  });
+  };
   const lastForcedTokenRef = useRef(0);
   const lastReloadTokenRef = useRef(null);
   const ctrlPrimedRef = useRef(false);
@@ -265,18 +269,12 @@ export default function Dashboard() {
     return () => clearInterval(t);
   }, [load, germanyLive]);
 
-  // Lightweight QA / Control poll – hits /api/now AND /api/control/state
-  // every 3s. Picks up admin goal-test triggers and the live-remote state
-  // (rotation paused, pinned screen, forced action, reload, hide overlays)
-  // without waiting for the heavy 60s data poll. /api/now and
-  // /api/control/state both bypass Football-Data so this is essentially free.
+  // Lightweight QA poll – hits /api/now every 3s to pick up admin
+  // goal-test triggers. Control-state is handled by useControlState (WS+poll).
   useEffect(() => {
     const tick = async () => {
       try {
-        const [now, ctrlState] = await Promise.all([
-          fetchNow().catch(() => null),
-          fetchControlState().catch(() => null),
-        ]);
+        const now = await fetchNow().catch(() => null);
         if (
           now?.goal_test_at &&
           now.goal_test_at !== lastGoalTestAtRef.current
@@ -286,7 +284,6 @@ export default function Dashboard() {
           }
           lastGoalTestAtRef.current = now.goal_test_at;
         }
-        if (ctrlState) setCtrl(ctrlState);
       } catch {
         /* ignore */
       }

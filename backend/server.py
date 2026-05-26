@@ -1,4 +1,7 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, WebSocket, WebSocketDisconnect
+from fastapi.responses import StreamingResponse
+import asyncio
+import json
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -538,6 +541,36 @@ async def _persist_control() -> None:
         {"$set": _control_snapshot()},
         upsert=True,
     )
+    # Fan-out to any connected WebSocket clients so the TV and admin app
+    # update in <100ms instead of waiting for the 3s polling fallback.
+    await _ws_broadcast(_control_snapshot())
+
+
+# ---------- WebSocket fan-out ----------
+_ws_clients: set = set()
+# Server-Sent-Events subscribers (works through HTTP-only proxies that
+# strip the WebSocket Upgrade header – preferred client transport).
+_sse_subscribers: set = set()
+
+
+async def _ws_broadcast(payload: dict) -> None:
+    # WebSocket fan-out
+    if _ws_clients:
+        dead = []
+        for ws in list(_ws_clients):
+            try:
+                await ws.send_json(payload)
+            except Exception:  # noqa: BLE001
+                dead.append(ws)
+        for ws in dead:
+            _ws_clients.discard(ws)
+    # SSE fan-out
+    if _sse_subscribers:
+        for q in list(_sse_subscribers):
+            try:
+                q.put_nowait(payload)
+            except Exception:  # noqa: BLE001
+                pass
 
 
 async def _load_control_state() -> None:
@@ -654,6 +687,64 @@ async def control_overlays(body: HideOverlaysBody):
     _control_state["hide_overlays"] = bool(body.hide)
     await _persist_control()
     return _control_snapshot()
+
+
+@app.websocket("/api/control/ws")
+async def control_websocket(ws: WebSocket):
+    """Bidirectional push channel (WebSocket). Kept as a transport option
+    but most browsers should use the SSE endpoint /api/control/stream
+    because some HTTP-proxies (incl. our K8s ingress) drop the WS
+    Upgrade header for cross-origin browser requests.
+    """
+    await ws.accept()
+    _ws_clients.add(ws)
+    try:
+        await ws.send_json(_control_snapshot())
+        while True:
+            await ws.receive_text()
+    except WebSocketDisconnect:
+        pass
+    except Exception:  # noqa: BLE001
+        pass
+    finally:
+        _ws_clients.discard(ws)
+
+
+@api_router.get("/control/stream")
+async def control_stream():
+    """Server-Sent Events stream – works through any HTTP/1.1 proxy.
+
+    Sends:
+      • The current snapshot once on connect
+      • A new snapshot after every /api/control/* mutation
+      • A `: keep-alive` comment every 20s so proxies don't time out
+    """
+    queue: asyncio.Queue = asyncio.Queue()
+    _sse_subscribers.add(queue)
+    # Seed with the current state so the client gets a snapshot immediately.
+    queue.put_nowait(_control_snapshot())
+
+    async def event_gen():
+        try:
+            while True:
+                try:
+                    payload = await asyncio.wait_for(queue.get(), timeout=20.0)
+                    yield f"data: {json.dumps(payload)}\n\n"
+                except asyncio.TimeoutError:
+                    # Keep the connection warm through proxies
+                    yield ": keep-alive\n\n"
+        finally:
+            _sse_subscribers.discard(queue)
+
+    return StreamingResponse(
+        event_gen(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
 
 
 @api_router.get("/source")
