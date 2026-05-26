@@ -45,10 +45,6 @@ export async function triggerGoalTest() {
 }
 
 // --- Live Control (Admin Remote) ---
-export async function fetchControlState() {
-  const res = await axios.get(`${API}/control/state`);
-  return res.data;
-}
 export async function controlPause()  { return (await axios.post(`${API}/control/rotation/pause`)).data; }
 export async function controlResume() { return (await axios.post(`${API}/control/rotation/resume`)).data; }
 export async function controlNext()   { return (await axios.post(`${API}/control/screen/next`)).data; }
@@ -61,11 +57,6 @@ export async function controlOverlays(hide) { return (await axios.post(`${API}/c
 
 export async function fetchGroups() {
   const res = await axios.get(`${API}/groups`);
-  return res.data;
-}
-
-export async function fetchSource() {
-  const res = await axios.get(`${API}/source`);
   return res.data;
 }
 

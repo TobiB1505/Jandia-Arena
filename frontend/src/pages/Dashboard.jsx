@@ -97,11 +97,11 @@ export default function Dashboard() {
   //   • forced_action    → one-shot show/next/previous, gated by token
   //   • reload_token     → window.location.reload()
   //   • hide_overlays    → suppress lower-thirds & studio overlay
-  // Live-control state pushed via WebSocket (with REST poll as fallback).
-  // See `useControlState` – the hook handles reconnects and keeps the UI
-  // fresh even when the socket is dropping in and out.
-  const wsCtrl = useControlState();
-  const ctrl = wsCtrl || {
+  // Live-control state pushed via Server-Sent Events (with REST poll as
+  // fallback). See `useControlState` – the hook handles reconnects and keeps
+  // the UI fresh even when the stream is dropping in and out.
+  const ctrlState = useControlState();
+  const ctrl = ctrlState || {
     rotation_paused: false,
     pinned_screen: null,
     forced_action: null,

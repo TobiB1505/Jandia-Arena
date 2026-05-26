@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, WebSocket, WebSocketDisconnect, Depends, HTTPException
+from fastapi import FastAPI, APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 import asyncio
 import json
@@ -572,36 +572,21 @@ async def _persist_control() -> None:
         {"$set": _control_snapshot()},
         upsert=True,
     )
-    # Fan-out to any connected WebSocket clients so the TV and admin app
-    # update in <100ms instead of waiting for the 3s polling fallback.
-    await _ws_broadcast(_control_snapshot())
+    # Fan-out to SSE subscribers so the TV and admin app update in <100ms
+    # instead of waiting for the 3s polling fallback.
+    await _broadcast_control(_control_snapshot())
 
 
-# ---------- WebSocket fan-out ----------
-_ws_clients: set = set()
-# Server-Sent-Events subscribers (works through HTTP-only proxies that
-# strip the WebSocket Upgrade header – preferred client transport).
+# ---------- SSE fan-out ----------
 _sse_subscribers: set = set()
 
 
-async def _ws_broadcast(payload: dict) -> None:
-    # WebSocket fan-out
-    if _ws_clients:
-        dead = []
-        for ws in list(_ws_clients):
-            try:
-                await ws.send_json(payload)
-            except Exception:  # noqa: BLE001
-                dead.append(ws)
-        for ws in dead:
-            _ws_clients.discard(ws)
-    # SSE fan-out
-    if _sse_subscribers:
-        for q in list(_sse_subscribers):
-            try:
-                q.put_nowait(payload)
-            except Exception:  # noqa: BLE001
-                pass
+async def _broadcast_control(payload: dict) -> None:
+    for q in list(_sse_subscribers):
+        try:
+            q.put_nowait(payload)
+        except Exception:  # noqa: BLE001
+            pass
 
 
 async def _load_control_state() -> None:
@@ -718,27 +703,6 @@ async def control_overlays(body: HideOverlaysBody):
     _control_state["hide_overlays"] = bool(body.hide)
     await _persist_control()
     return _control_snapshot()
-
-
-@app.websocket("/api/control/ws")
-async def control_websocket(ws: WebSocket):
-    """Bidirectional push channel (WebSocket). Kept as a transport option
-    but most browsers should use the SSE endpoint /api/control/stream
-    because some HTTP-proxies (incl. our K8s ingress) drop the WS
-    Upgrade header for cross-origin browser requests.
-    """
-    await ws.accept()
-    _ws_clients.add(ws)
-    try:
-        await ws.send_json(_control_snapshot())
-        while True:
-            await ws.receive_text()
-    except WebSocketDisconnect:
-        pass
-    except Exception:  # noqa: BLE001
-        pass
-    finally:
-        _ws_clients.discard(ws)
 
 
 @api_router.get("/control/stream")

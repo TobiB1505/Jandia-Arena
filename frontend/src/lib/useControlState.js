@@ -57,8 +57,6 @@ export default function useControlState() {
         const es = new EventSource(sseUrl);
         esRef.current = es;
         es.onopen = () => {
-          // eslint-disable-next-line no-console
-          console.log("[control] SSE open", sseUrl);
           reconnectMsRef.current = SSE_RECONNECT_BASE;
           setSseConnected(true);
           setPollInterval(POLL_SLOW);

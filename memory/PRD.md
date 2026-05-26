@@ -90,6 +90,20 @@ Create a 16:9 TV dashboard web app for "JANDIA ARENA". The app will be displayed
 ## Iteration 5 (2026-02-25) – Cycle-Timer Stabilisierung
 - [x] **Lower-Thirds Cycle-Bug behoben** (Stage + Header): stabiler `eligibleKey` String statt Array-Referenz in `useEffect`-Dependencies. Verhindert vorzeitigen Timer-Reset beim 60s-Datenpoll, Banner cyceln nun die volle eingestellte `cycle_duration_ms`.
 
+## Iteration 9 (2026-05-26) – Code-Cleanup pre-Final
+- [x] **Tote Komponente entfernt**: `SimulateDateAdmin.jsx` gelöscht (durch `SetupTab.jsx` ersetzt).
+- [x] **Tote Backend-Endpoints entfernt**: WebSocket-Route `/api/control/ws` + `_ws_clients`/`_ws_broadcast` Stack komplett raus. SSE bleibt der einzige Push-Kanal (`_broadcast_control` → SSE-Subscriber-Queues).
+- [x] **Tote Frontend-Exports entfernt**: `fetchControlState`, `fetchSource` aus `lib/api.js`.
+- [x] **Debug-Logs entfernt**: SSE-open `console.log` in `useControlState.js`.
+- [x] **Outdated Kommentare**: Dashboard.jsx WebSocket-Hinweise auf SSE umgeschrieben, `wsCtrl` → `ctrlState` umbenannt.
+- [x] **Admin.jsx Refactor**: ItemRow + ItemDialog + Lower-Thirds-Block in `LowerThirdsManager.jsx` extrahiert. Admin.jsx 812 → 232 Zeilen (–71%).
+- [x] Backend 42/42 Tests grün, E2E (Login → 5 Tabs → Lower-Thirds-Liste → SSE) verifiziert.
+
+## Iteration 8 (2026-05-26) – Admin-Auth + Setup Mobile-Redesign
+- [x] **Admin-Login**: Shared-Passwort aus `backend/.env` (`ADMIN_PASSWORD`), HMAC-SHA256-Token (`ADMIN_SECRET`), 7 Tage gültig.
+- [x] **Backend-Schutz**: alle POST/PUT/DELETE/PATCH der Module `server.py` (Control, Goal-Test, Simulate-Date), `lower_thirds.py` und `experts.py` benötigen `Depends(auth.require_admin)`. GET-Endpoints (für die TV-Anzeige) bleiben öffentlich.
+- [x] **`SetupTab.jsx`** kompletter Mobile-Redesign mit 3-Pill-Status, Touch-Targets ≥48px, eigener QA- und Auth-Sektion.
+
 ## Backlog (P1)
 - Tor-Animations-Overlay (4s "GOOOAL!" wenn Live-Score sich ändert)
 - Bundesliga-Übergangsmodus (BL1-API bis WM-Start)
@@ -98,19 +112,6 @@ Create a 16:9 TV dashboard web app for "JANDIA ARENA". The app will be displayed
 - Sponsor/Hotel-Promo-Banner (3s zwischen Rotationen)
 - Stadium-specific theming
 - Multi-day schedule navigation
-
-## Iteration 8 (2026-05-26) – Admin-Auth + Setup Mobile-Redesign
-- [x] **Admin-Login**: Shared-Passwort aus `backend/.env` (`ADMIN_PASSWORD`), HMAC-SHA256-Token (`ADMIN_SECRET`), 7 Tage gültig. Token im `localStorage`. Axios-Interceptor hängt automatisch `Authorization: Bearer …` an alle Calls, 401-Response löst Re-Login aus.
-- [x] **Backend-Schutz**: alle POST/PUT/DELETE/PATCH der Module `server.py` (Control, Goal-Test, Simulate-Date), `lower_thirds.py` und `experts.py` benötigen `Depends(auth.require_admin)`. GET-Endpoints (für die TV-Anzeige) bleiben öffentlich.
-- [x] **`AdminLogin.jsx`**: Lock-Screen mit Passwort-Input, Fehlerausgabe „Falsches Passwort", Auto-Focus, Back-Link zur TV-Ansicht.
-- [x] **`SetupTab.jsx`** (kompletter Mobile-Redesign):
-  - 3-Spalten Status-Pills (Aktiv / Quelle / .env)
-  - Full-width Touch-Targets (≥48px) gestapelt: „Datum übernehmen", „Live-Betrieb aktivieren", „Override entfernen"
-  - Eigene QA-Karte: „Goal-Animation triggern"
-  - Anmeldung-Karte mit „Abmelden"-Button
-  - Kompakte System-Info-Liste am Ende (k/v-Rows)
-- [x] **Tests**: `conftest.py` mit `admin_session`-Fixture; 42/42 Backend-Tests grün (`test_control.py`, `test_live_lock.py`, `test_lower_thirds.py`).
-- [x] E2E getestet: Login → falsche/richtige Passwort-Flows, SSE bleibt aktiv, Setup-Tab korrekt, Logout funktioniert, TV-Seite (`/`) läuft weiterhin ohne Auth.
 
 ## Iteration 7 (2026-05-26) – SSE-Fix + Responsive Admin
 - [x] **SSE-Verbindung gefixt**: `closedRef` wurde im React-StrictMode-Doppelmount nicht zurückgesetzt → EventSource konnte nicht neu öffnen. Lösung: `closedRef.current = false` am Anfang des Effect-Bodies.
