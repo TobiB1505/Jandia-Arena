@@ -499,6 +499,163 @@ async def reset_simulate_date():
     return await get_simulate_date()
 
 
+# ====================================================================
+# LIVE-CONTROL — Mobile Admin Remote / Regiezentrale
+# ====================================================================
+# A single Mongo document `tv_control.singleton` mirrors the in-memory
+# state. The TV dashboard polls /api/control/state every 2-3s and reacts.
+ALLOWED_SCREENS = {
+    "today", "next", "germany", "tomorrow", "schedule", "groups", "experts",
+}
+
+_CONTROL_DOC_ID = "singleton"
+_control_state: dict = {
+    "rotation_paused": False,
+    "pinned_screen": None,
+    "forced_action": None,   # {"type": "show"|"next"|"previous", "screen": str|None, "token": int}
+    "reload_token": 0,
+    "hide_overlays": False,
+    "updated_at": None,
+}
+_forced_token_counter: int = 0
+
+
+def _control_snapshot() -> dict:
+    return {
+        "rotation_paused": bool(_control_state["rotation_paused"]),
+        "pinned_screen": _control_state["pinned_screen"],
+        "forced_action": _control_state["forced_action"],
+        "reload_token": int(_control_state["reload_token"]),
+        "hide_overlays": bool(_control_state["hide_overlays"]),
+        "updated_at": _control_state["updated_at"],
+    }
+
+
+async def _persist_control() -> None:
+    _control_state["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.tv_control.update_one(
+        {"_id": _CONTROL_DOC_ID},
+        {"$set": _control_snapshot()},
+        upsert=True,
+    )
+
+
+async def _load_control_state() -> None:
+    global _forced_token_counter
+    try:
+        doc = await db.tv_control.find_one({"_id": _CONTROL_DOC_ID})
+        if doc:
+            for k in ("rotation_paused", "pinned_screen", "forced_action",
+                      "reload_token", "hide_overlays", "updated_at"):
+                if k in doc:
+                    _control_state[k] = doc[k]
+            if isinstance(_control_state.get("forced_action"), dict):
+                _forced_token_counter = max(
+                    _forced_token_counter,
+                    int(_control_state["forced_action"].get("token", 0)),
+                )
+    except Exception as e:  # noqa: BLE001
+        logging.getLogger(__name__).warning("Load tv_control failed: %s", e)
+
+
+def _next_forced_token() -> int:
+    global _forced_token_counter
+    _forced_token_counter += 1
+    return _forced_token_counter
+
+
+class ScreenBody(BaseModel):
+    screen: str
+
+
+class HideOverlaysBody(BaseModel):
+    hide: bool
+
+
+@api_router.get("/control/state")
+async def get_control_state():
+    return _control_snapshot()
+
+
+@api_router.post("/control/rotation/pause")
+async def control_pause():
+    _control_state["rotation_paused"] = True
+    await _persist_control()
+    return _control_snapshot()
+
+
+@api_router.post("/control/rotation/resume")
+async def control_resume():
+    _control_state["rotation_paused"] = False
+    await _persist_control()
+    return _control_snapshot()
+
+
+@api_router.post("/control/screen/next")
+async def control_next():
+    _control_state["forced_action"] = {
+        "type": "next",
+        "screen": None,
+        "token": _next_forced_token(),
+    }
+    await _persist_control()
+    return _control_snapshot()
+
+
+@api_router.post("/control/screen/previous")
+async def control_previous():
+    _control_state["forced_action"] = {
+        "type": "previous",
+        "screen": None,
+        "token": _next_forced_token(),
+    }
+    await _persist_control()
+    return _control_snapshot()
+
+
+@api_router.post("/control/screen/show")
+async def control_show(body: ScreenBody):
+    if body.screen not in ALLOWED_SCREENS:
+        return {"ok": False, "error": "unknown_screen", "allowed": sorted(ALLOWED_SCREENS)}
+    _control_state["forced_action"] = {
+        "type": "show",
+        "screen": body.screen,
+        "token": _next_forced_token(),
+    }
+    await _persist_control()
+    return _control_snapshot()
+
+
+@api_router.post("/control/screen/pin")
+async def control_pin(body: ScreenBody):
+    if body.screen not in ALLOWED_SCREENS:
+        return {"ok": False, "error": "unknown_screen", "allowed": sorted(ALLOWED_SCREENS)}
+    _control_state["pinned_screen"] = body.screen
+    await _persist_control()
+    return _control_snapshot()
+
+
+@api_router.post("/control/screen/unpin")
+async def control_unpin():
+    _control_state["pinned_screen"] = None
+    await _persist_control()
+    return _control_snapshot()
+
+
+@api_router.post("/control/tv/reload")
+async def control_reload():
+    _control_state["reload_token"] = int(_control_state["reload_token"]) + 1
+    await _persist_control()
+    return _control_snapshot()
+
+
+@api_router.post("/control/overlays/hide")
+async def control_overlays(body: HideOverlaysBody):
+    _control_state["hide_overlays"] = bool(body.hide)
+    await _persist_control()
+    return _control_snapshot()
+
+
 @api_router.get("/source")
 async def get_source():
     """Reports which data source is currently powering the dashboard."""
@@ -632,6 +789,11 @@ async def _init_object_storage():
 @app.on_event("startup")
 async def _hydrate_runtime_settings():
     await _load_simulate_date_override()
+
+
+@app.on_event("startup")
+async def _hydrate_control_state():
+    await _load_control_state()
 
 app.add_middleware(
     CORSMiddleware,

@@ -17,6 +17,7 @@ import {
   fetchLowerThirds,
   fetchLowerThirdsSettings,
   fetchExperts,
+  fetchControlState,
   adaptExpert,
   FALLBACK_MATCHES,
   FALLBACK_GROUPS,
@@ -88,6 +89,24 @@ export default function Dashboard() {
   // synthetic celebration once per change.
   const [goalTestKey, setGoalTestKey] = useState(0);
   const lastGoalTestAtRef = useRef(null);
+
+  // Live-control state from admin remote (POST /api/control/*). Polled every
+  // 3s alongside the goal-test ping. The dashboard reacts to:
+  //   • rotation_paused  → freeze the rotation timer
+  //   • pinned_screen    → snap to that screen, lock rotation
+  //   • forced_action    → one-shot show/next/previous, gated by token
+  //   • reload_token     → window.location.reload()
+  //   • hide_overlays    → suppress lower-thirds & studio overlay
+  const [ctrl, setCtrl] = useState({
+    rotation_paused: false,
+    pinned_screen: null,
+    forced_action: null,
+    reload_token: null,
+    hide_overlays: false,
+  });
+  const lastForcedTokenRef = useRef(0);
+  const lastReloadTokenRef = useRef(null);
+  const ctrlPrimedRef = useRef(false);
 
   // Allow the admin preview iframe to embed the dashboard without the
   // lower-third overlay (so the editor can draw its own draggable overlay
@@ -246,13 +265,18 @@ export default function Dashboard() {
     return () => clearInterval(t);
   }, [load, germanyLive]);
 
-  // Lightweight QA poll – hits /api/now every 3s ONLY to pick up admin
-  // goal-test triggers without waiting for the heavy 60s data poll. Adds
-  // negligible load (one tiny endpoint that doesn't touch Football-Data).
+  // Lightweight QA / Control poll – hits /api/now AND /api/control/state
+  // every 3s. Picks up admin goal-test triggers and the live-remote state
+  // (rotation paused, pinned screen, forced action, reload, hide overlays)
+  // without waiting for the heavy 60s data poll. /api/now and
+  // /api/control/state both bypass Football-Data so this is essentially free.
   useEffect(() => {
     const tick = async () => {
       try {
-        const now = await fetchNow();
+        const [now, ctrlState] = await Promise.all([
+          fetchNow().catch(() => null),
+          fetchControlState().catch(() => null),
+        ]);
         if (
           now?.goal_test_at &&
           now.goal_test_at !== lastGoalTestAtRef.current
@@ -262,20 +286,26 @@ export default function Dashboard() {
           }
           lastGoalTestAtRef.current = now.goal_test_at;
         }
+        if (ctrlState) setCtrl(ctrlState);
       } catch {
         /* ignore */
       }
     };
+    tick();
     const t = setInterval(tick, 3000);
     return () => clearInterval(t);
   }, []);
 
-  // Screen rotation timer. Disabled while the Germany match is live – the
-  // dashboard stays pinned on the Public-Viewing slide until the API flips
-  // the match status to "finished" (handled by SCREENS recomputing).
+  // Screen rotation timer. Disabled while:
+  //   • a URL ?screen= override is set (editor preview)
+  //   • the Germany match is live (live-lock)
+  //   • the admin has pinned a screen from the control panel
+  //   • the admin has paused rotation
   useEffect(() => {
-    if (pinnedScreen) return; // editor preview: don't auto-rotate
+    if (pinnedScreen) return;
     if (germanyLive) return;
+    if (ctrl.pinned_screen) return;
+    if (ctrl.rotation_paused) return;
     const duration = SCREEN_DURATION_MS[SCREENS[screenIdx]] || 15000;
     const t = setTimeout(
       () => setScreenIdx((i) => (i + 1) % SCREENS.length),
@@ -283,7 +313,57 @@ export default function Dashboard() {
     );
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [screenIdx, pinnedScreen, germanyLive, screensKey]);
+  }, [screenIdx, pinnedScreen, germanyLive, screensKey, ctrl.rotation_paused, ctrl.pinned_screen]);
+
+  // Snap to admin-pinned screen whenever it changes (or whenever the screen
+  // list updates and the pin is still in range).
+  useEffect(() => {
+    if (!ctrl.pinned_screen) return;
+    const idx = SCREENS.indexOf(ctrl.pinned_screen);
+    if (idx >= 0) setScreenIdx(idx);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ctrl.pinned_screen, screensKey]);
+
+  // One-shot forced action (Show / Next / Previous). Gated by token so the
+  // same action can fire multiple times if the admin spams the button.
+  // ALSO: ignore the server's persisted token on first hydration, otherwise
+  // we'd replay the last admin action every page reload.
+  useEffect(() => {
+    const fa = ctrl.forced_action;
+    if (!fa || typeof fa.token !== "number") return;
+    if (!ctrlPrimedRef.current) {
+      ctrlPrimedRef.current = true;
+      lastForcedTokenRef.current = fa.token;
+      return;
+    }
+    if (fa.token <= lastForcedTokenRef.current) return;
+    lastForcedTokenRef.current = fa.token;
+    if (fa.type === "show" && fa.screen) {
+      const idx = SCREENS.indexOf(fa.screen);
+      if (idx >= 0) setScreenIdx(idx);
+    } else if (fa.type === "next") {
+      setScreenIdx((i) => (i + 1) % Math.max(SCREENS.length, 1));
+    } else if (fa.type === "previous") {
+      setScreenIdx((i) => (i - 1 + SCREENS.length) % Math.max(SCREENS.length, 1));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ctrl.forced_action, screensKey]);
+
+  // TV reload from admin – ignores the initial snapshot, only fires when the
+  // admin actively pushes a NEW reload_token after we've seen the first one.
+  useEffect(() => {
+    if (ctrl.reload_token === null || typeof ctrl.reload_token !== "number") return;
+    if (lastReloadTokenRef.current === null) {
+      lastReloadTokenRef.current = ctrl.reload_token;
+      return;
+    }
+    if (ctrl.reload_token !== lastReloadTokenRef.current) {
+      lastReloadTokenRef.current = ctrl.reload_token;
+      if (typeof window !== "undefined") {
+        window.location.reload();
+      }
+    }
+  }, [ctrl.reload_token]);
 
   // Force-pin to the Germany slide whenever the match goes live (or stays
   // live across polls). Snaps even if the rotation was mid-slide.
@@ -300,8 +380,10 @@ export default function Dashboard() {
     stageRef.current?.enterFullscreen();
   }, []);
 
-  const current = pinnedScreen && SCREENS.includes(pinnedScreen)
-    ? pinnedScreen
+  // Effective pinned screen: URL override (dev) > admin remote.
+  const effectivePin = pinnedScreen || ctrl.pinned_screen;
+  const current = effectivePin && SCREENS.includes(effectivePin)
+    ? effectivePin
     : SCREENS[screenIdx];
 
   return (
@@ -328,6 +410,7 @@ export default function Dashboard() {
           lowerThirds={lowerThirds}
           ltCycleMs={ltCycleMs}
           currentScreen={current}
+          hideOverlays={ctrl.hide_overlays}
         />
 
         <main className="relative flex-1 min-h-0">
@@ -354,7 +437,7 @@ export default function Dashboard() {
           </AnimatePresence>
 
           {/* Admin-driven Lower Third auto-cycle (per current screen) */}
-          {!ltSuppressed && (
+          {!ltSuppressed && !ctrl.hide_overlays && (
             <LowerThirdAutoCycle
               items={lowerThirds}
               currentScreen={current}

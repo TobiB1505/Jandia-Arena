@@ -40,6 +40,7 @@ export const Header = ({
   lowerThirds,
   ltCycleMs,
   currentScreen,
+  hideOverlays = false,
 }) => {
   const [now, setNow] = useState(new Date());
 
@@ -83,7 +84,7 @@ export const Header = ({
       {/* Header ticker – cycles admin-driven banners */}
       <div className="mx-12 flex flex-1 items-center justify-center">
         <HeaderLowerThirdCycle
-          items={lowerThirds}
+          items={hideOverlays ? [] : lowerThirds}
           currentScreen={currentScreen}
           cycleDurationMs={ltCycleMs}
         />

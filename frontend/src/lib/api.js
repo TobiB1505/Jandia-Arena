@@ -18,7 +18,7 @@ export async function fetchNow() {
   return res.data;
 }
 
-// --- Simulate-date runtime override ---
+// Simulate-date runtime override + Live-control API
 export async function fetchSimulateDate() {
   const res = await axios.get(`${API}/settings/simulate-date`);
   return res.data;
@@ -43,6 +43,21 @@ export async function triggerGoalTest() {
   const res = await axios.post(`${API}/admin/goal-test`);
   return res.data;
 }
+
+// --- Live Control (Admin Remote) ---
+export async function fetchControlState() {
+  const res = await axios.get(`${API}/control/state`);
+  return res.data;
+}
+export async function controlPause()  { return (await axios.post(`${API}/control/rotation/pause`)).data; }
+export async function controlResume() { return (await axios.post(`${API}/control/rotation/resume`)).data; }
+export async function controlNext()   { return (await axios.post(`${API}/control/screen/next`)).data; }
+export async function controlPrev()   { return (await axios.post(`${API}/control/screen/previous`)).data; }
+export async function controlShow(screen)  { return (await axios.post(`${API}/control/screen/show`,  { screen })).data; }
+export async function controlPin(screen)   { return (await axios.post(`${API}/control/screen/pin`,   { screen })).data; }
+export async function controlUnpin()  { return (await axios.post(`${API}/control/screen/unpin`)).data; }
+export async function controlReload() { return (await axios.post(`${API}/control/tv/reload`)).data; }
+export async function controlOverlays(hide) { return (await axios.post(`${API}/control/overlays/hide`, { hide })).data; }
 
 export async function fetchGroups() {
   const res = await axios.get(`${API}/groups`);

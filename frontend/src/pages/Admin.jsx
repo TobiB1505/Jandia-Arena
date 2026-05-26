@@ -30,6 +30,8 @@ import {
 import LowerThirdLiveEditor from "../components/LowerThirdLiveEditor";
 import ExpertsAdmin from "../components/ExpertsAdmin";
 import SimulateDateAdmin from "../components/SimulateDateAdmin";
+import LiveControlTab from "../components/LiveControlTab";
+import ScreensTab from "../components/ScreensTab";
 import {
   fetchLowerThirds,
   fetchLowerThirdsSettings,
@@ -52,7 +54,16 @@ const EMPTY = {
   slot: "header",
 };
 
+const TABS = [
+  { id: "live",     label: "Live",     icon: "●" },
+  { id: "screens",  label: "Screens",  icon: "▦" },
+  { id: "lt",       label: "Lower Thirds", icon: "▤" },
+  { id: "experts",  label: "Experten", icon: "✦" },
+  { id: "settings", label: "Setup",    icon: "⚙" },
+];
+
 export default function Admin() {
+  const [tab, setTab] = useState("live");
   const [items, setItems] = useState([]);
   const [meta, setMeta] = useState({ variants: [], screens: [] });
   const [duration, setDuration] = useState(25);
@@ -141,126 +152,158 @@ export default function Admin() {
   };
 
   return (
-    <div className="min-h-screen bg-[#06091a] px-8 py-10 text-blue-50">
-      <div className="mx-auto max-w-6xl space-y-8">
-        <header className="flex flex-wrap items-end justify-between gap-4">
+    <div className="min-h-screen bg-[#06091a] pb-24 text-blue-50">
+      {/* Sticky mobile header */}
+      <header className="sticky top-0 z-40 border-b border-blue-400/15 bg-[#06091a]/95 backdrop-blur">
+        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
           <div>
-            <h1 className="text-4xl font-bold tracking-tight">
-              Jandia Arena · Admin
+            <h1 className="text-lg font-bold leading-tight tracking-tight">
+              Jandia Arena
             </h1>
-            <p className="mt-1 text-blue-300">
-              Steuere die Studio Lower Thirds und den Auto-Cycle der TV-Wand.
+            <p className="text-[10px] uppercase tracking-[0.3em] text-blue-300/70">
+              Live-Regie
             </p>
           </div>
           <a
             href="/"
-            className="rounded-md border border-blue-400/30 px-4 py-2 text-sm uppercase tracking-widest text-blue-200 hover:bg-white/5"
+            className="rounded-lg border border-blue-400/30 px-3 py-2 text-[11px] font-bold uppercase tracking-widest text-blue-200 hover:bg-white/5"
             data-testid="admin-back"
           >
-            Zur TV-Ansicht
+            TV
           </a>
-        </header>
+        </div>
+      </header>
 
-        {/* Daten-Modus / Simulated Date */}
-        <SimulateDateAdmin />
+      <main className="mx-auto max-w-3xl px-4 py-5 space-y-6">
+        {/* === LIVE TAB === */}
+        {tab === "live" && <LiveControlTab />}
 
-        {/* Global settings */}
-        <Card className="border-blue-400/20 bg-[#0c1430]">
-          <CardHeader>
-            <CardTitle className="text-blue-100">Auto-Cycle</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap items-end gap-4">
-              <div className="flex-1 min-w-[220px]">
-                <Label className="text-blue-200">
-                  Cycle-Dauer pro Lower Third (Sekunden)
-                </Label>
-                <Input
-                  type="number"
-                  min={3}
-                  value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
-                  className="mt-2 bg-[#0a112a] text-white"
-                  data-testid="cycle-duration-input"
+        {/* === SCREENS TAB === */}
+        {tab === "screens" && <ScreensTab />}
+
+        {/* === LOWER THIRDS TAB === */}
+        {tab === "lt" && (
+          <div className="space-y-6">
+            {/* Auto-Cycle */}
+            <Card className="border-blue-400/20 bg-[#0c1430]">
+              <CardHeader>
+                <CardTitle className="text-blue-100 text-lg">Auto-Cycle</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-blue-200">
+                      Cycle-Dauer pro Lower Third (Sekunden)
+                    </Label>
+                    <Input
+                      type="number"
+                      min={3}
+                      value={duration}
+                      onChange={(e) => setDuration(e.target.value)}
+                      className="mt-2 h-12 bg-[#0a112a] text-white text-base"
+                      data-testid="cycle-duration-input"
+                    />
+                    <p className="mt-1 text-xs text-blue-300/70">
+                      Gilt pro Screen, der mehrere aktive Lower Thirds hat. Minimum 3 Sekunden.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={saveDuration}
+                    disabled={savingDuration}
+                    data-testid="cycle-duration-save"
+                    className="h-12 w-full bg-blue-500 hover:bg-blue-400 text-base"
+                  >
+                    {savingDuration ? "Speichere…" : "Speichern"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Items list */}
+            <Card className="border-blue-400/20 bg-[#0c1430]">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                <CardTitle className="text-blue-100 text-lg">Lower Thirds</CardTitle>
+                <Button
+                  onClick={() => setEditing({ ...EMPTY })}
+                  data-testid="add-lower-third-btn"
+                  className="h-10 bg-blue-500 hover:bg-blue-400"
+                >
+                  + Neu
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {items.length === 0 ? (
+                  <div className="rounded-md border border-dashed border-blue-400/30 px-4 py-8 text-center text-blue-300 text-sm">
+                    Noch keine Lower Thirds angelegt.
+                  </div>
+                ) : (
+                  <div className="space-y-3" data-testid="lower-thirds-list">
+                    {items.map((item) => (
+                      <ItemRow
+                        key={item.id}
+                        item={item}
+                        meta={meta}
+                        onEdit={() => setEditing({ ...item })}
+                        onDelete={() => setConfirmDelete(item)}
+                        onToggleActive={async (active) => {
+                          try {
+                            await patchLowerThirdActive(item.id, active);
+                            await refresh();
+                          } catch (e) {
+                            toast.error("Update fehlgeschlagen: " + e.message);
+                          }
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Live preview / drag-and-drop editor */}
+            <Card className="border-blue-400/20 bg-[#0c1430]">
+              <CardHeader>
+                <CardTitle className="text-blue-100 text-lg">
+                  Live-Vorschau · Drag &amp; Drop
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <LowerThirdLiveEditor
+                  items={items}
+                  meta={meta}
+                  selectedScreen={previewScreen}
+                  onScreenChange={setPreviewScreen}
+                  onPersisted={refresh}
                 />
-                <p className="mt-1 text-xs text-blue-300/70">
-                  Gilt pro Screen, der mehrere aktive Lower Thirds hat. Minimum 3 Sekunden.
-                </p>
-              </div>
-              <Button
-                onClick={saveDuration}
-                disabled={savingDuration}
-                data-testid="cycle-duration-save"
-                className="bg-blue-500 hover:bg-blue-400"
-              >
-                {savingDuration ? "Speichere…" : "Speichern"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
-        {/* Items list */}
-        <Card className="border-blue-400/20 bg-[#0c1430]">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-blue-100">Lower Thirds</CardTitle>
-            <Button
-              onClick={() => setEditing({ ...EMPTY })}
-              data-testid="add-lower-third-btn"
-              className="bg-blue-500 hover:bg-blue-400"
-            >
-              + Neuer Lower Third
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {items.length === 0 ? (
-              <div className="rounded-md border border-dashed border-blue-400/30 px-6 py-10 text-center text-blue-300">
-                Noch keine Lower Thirds angelegt. Klick „Neuer Lower Third" um zu starten.
-              </div>
-            ) : (
-              <div className="space-y-3" data-testid="lower-thirds-list">
-                {items.map((item) => (
-                  <ItemRow
-                    key={item.id}
-                    item={item}
-                    meta={meta}
-                    onEdit={() => setEditing({ ...item })}
-                    onDelete={() => setConfirmDelete(item)}
-                    onToggleActive={async (active) => {
-                      try {
-                        await patchLowerThirdActive(item.id, active);
-                        await refresh();
-                      } catch (e) {
-                        toast.error("Update fehlgeschlagen: " + e.message);
-                      }
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* === EXPERTS TAB === */}
+        {tab === "experts" && <ExpertsAdmin />}
 
-        {/* Live preview / drag-and-drop editor */}
-        <Card className="border-blue-400/20 bg-[#0c1430]">
-          <CardHeader>
-            <CardTitle className="text-blue-100">
-              Live-Vorschau · Drag &amp; Drop
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <LowerThirdLiveEditor
-              items={items}
-              meta={meta}
-              selectedScreen={previewScreen}
-              onScreenChange={setPreviewScreen}
-              onPersisted={refresh}
-            />
-          </CardContent>
-        </Card>
-
-        {/* Experts management */}
-        <ExpertsAdmin />
-      </div>
+        {/* === SETTINGS TAB === */}
+        {tab === "settings" && (
+          <div className="space-y-6">
+            <SimulateDateAdmin />
+            <Card className="border-blue-400/20 bg-[#0c1430]">
+              <CardHeader>
+                <CardTitle className="text-blue-100 text-lg">System-Info</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 text-sm text-blue-200">
+                  <p>• Broadcast-Stage: 1920×1080 fix, automatisch skaliert</p>
+                  <p>• API-Polling Normal-Modus: 60 s</p>
+                  <p>• API-Polling Live-Modus (Deutschland-Spiel): 15 s</p>
+                  <p>• Live-Control-Polling: 3 s</p>
+                  <p>• Rate-Limit-Guard: max. 9 Calls / Minute</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </main>
 
       {/* Edit dialog */}
       <ItemDialog
@@ -305,6 +348,45 @@ export default function Admin() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Sticky bottom navigation */}
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-50 border-t border-blue-400/20 bg-[#06091a]/95 backdrop-blur"
+        data-testid="admin-bottom-nav"
+      >
+        <div className="mx-auto grid max-w-3xl grid-cols-5">
+          {TABS.map((t) => {
+            const active = t.id === tab;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                data-testid={`admin-tab-${t.id}`}
+                className={`flex flex-col items-center justify-center py-2.5 transition ${
+                  active
+                    ? "text-blue-100"
+                    : "text-blue-400/60 hover:text-blue-200"
+                }`}
+              >
+                <span
+                  className={`text-base ${
+                    active ? "text-blue-300" : "text-blue-400/50"
+                  }`}
+                >
+                  {t.icon}
+                </span>
+                <span className="mt-0.5 text-[10px] font-bold uppercase tracking-wider">
+                  {t.label}
+                </span>
+                {active && (
+                  <span className="mt-0.5 h-[3px] w-6 rounded-full bg-blue-400" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ height: "env(safe-area-inset-bottom)" }} />
+      </nav>
     </div>
   );
 }
