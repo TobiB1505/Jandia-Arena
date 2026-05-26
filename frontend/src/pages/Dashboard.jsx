@@ -246,6 +246,30 @@ export default function Dashboard() {
     return () => clearInterval(t);
   }, [load, germanyLive]);
 
+  // Lightweight QA poll – hits /api/now every 3s ONLY to pick up admin
+  // goal-test triggers without waiting for the heavy 60s data poll. Adds
+  // negligible load (one tiny endpoint that doesn't touch Football-Data).
+  useEffect(() => {
+    const tick = async () => {
+      try {
+        const now = await fetchNow();
+        if (
+          now?.goal_test_at &&
+          now.goal_test_at !== lastGoalTestAtRef.current
+        ) {
+          if (lastGoalTestAtRef.current !== null) {
+            setGoalTestKey((k) => k + 1);
+          }
+          lastGoalTestAtRef.current = now.goal_test_at;
+        }
+      } catch {
+        /* ignore */
+      }
+    };
+    const t = setInterval(tick, 3000);
+    return () => clearInterval(t);
+  }, []);
+
   // Screen rotation timer. Disabled while the Germany match is live – the
   // dashboard stays pinned on the Public-Viewing slide until the API flips
   // the match status to "finished" (handled by SCREENS recomputing).
